@@ -1,29 +1,24 @@
-import { Suspense } from "solid-js";
-import { Body, ErrorBoundary, FileRoutes, Head, Html, Meta, Scripts, Title } from "@solidjs/start";
 import { Router } from "@solidjs/router";
+import { FileRoutes } from "@solidjs/start/router";
+import { Suspense } from "solid-js";
+import { ErrorBoundary } from "solid-js/web";
 import "./styles/app.css";
 
-export default function Root() {
+export default function App() {
   return (
-    <Html lang="en">
-      <Head>
-        <Title>Tarot Daily</Title>
-        <Meta name="description" content="Deterministic daily tarot readings with evolving prompts." />
-        <Meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta name="theme-color" content="#3b0764" />
-        <link rel="manifest" href="/manifest.webmanifest" />
-      </Head>
-      <Body>
-        <Suspense>
-          <ErrorBoundary fallback={(err) => <ErrorView error={err} />}>
-            <Router>
-              <FileRoutes />
-            </Router>
-          </ErrorBoundary>
-        </Suspense>
-        <Scripts />
-      </Body>
-    </Html>
+    <Router
+      root={props => (
+        <>
+          <Suspense>
+            <ErrorBoundary fallback={(err) => <ErrorView error={err} />}>
+              {props.children}
+            </ErrorBoundary>
+          </Suspense>
+        </>
+      )}
+    >
+      <FileRoutes />
+    </Router>
   );
 }
 

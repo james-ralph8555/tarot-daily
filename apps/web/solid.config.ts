@@ -4,7 +4,7 @@ export default defineConfig({
   server: {
     preset: "node"
   },
-  routesDir: "./src/routes",
+  routeDir: "./src/routes",
   serviceWorker: {
     entry: "./src/service-worker.ts",
     strategies: {

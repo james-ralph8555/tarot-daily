@@ -21,12 +21,9 @@ This will:
 - Activate the virtual environment
 - Provide Python 3.11, Node.js 20, and development tools
 
-### Installing Python dependencies
+### Python Dependencies
 
-```bash
-# Inside the Nix shell
-pip install -r apps/pipeline/requirements.txt
-```
+All Python dependencies are automatically provided by the Nix environment. No manual installation required.
 
 ### Running the tarot pipeline
 

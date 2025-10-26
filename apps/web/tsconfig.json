@@ -4,7 +4,9 @@
     "types": [
       "@solidjs/start/env",
       "vite/client"
-    ]
+    ],
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
   },
   "include": [
     "solid.config.ts",
