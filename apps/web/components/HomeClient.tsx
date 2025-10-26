@@ -57,7 +57,7 @@ export function HomeClient(props: HomeClientProps) {
 
     try {
       await streamReading(
-        { intent, signal: controller.signal },
+        { intent, signal: controller.signal, force: true },
         (event) => {
           if (event.type === "delta" && typeof event.data === "object" && event.data) {
             const { section, text } = event.data as { section: string; text: string };

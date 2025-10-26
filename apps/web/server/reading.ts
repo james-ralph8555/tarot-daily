@@ -32,6 +32,7 @@ export interface ReadingRequestInput {
   spreadType: SpreadType;
   tone?: string;
   promptVersion?: string;
+  force?: boolean;
 }
 
 export interface ReadingResult {
@@ -51,9 +52,21 @@ export interface ReadingHistory {
 }
 
 export async function ensureReading(input: ReadingRequestInput): Promise<ReadingResult> {
-  const existing = await findReading(input.userId, input.isoDate);
-  if (existing) {
-    return { reading: existing, created: false };
+  if (input.force) {
+    // Delete existing reading and its feedback when forcing regeneration
+    await run(
+      "DELETE FROM feedback WHERE reading_id IN (SELECT id FROM readings WHERE user_id = ? AND iso_date = ?)",
+      { params: [input.userId, input.isoDate] }
+    );
+    await run(
+      "DELETE FROM readings WHERE user_id = ? AND iso_date = ?",
+      { params: [input.userId, input.isoDate] }
+    );
+  } else {
+    const existing = await findReading(input.userId, input.isoDate);
+    if (existing) {
+      return { reading: existing, created: false };
+    }
   }
 
   try {
@@ -159,8 +172,12 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
     throw new Error("userId is required but was not provided");
   }
   
-  const seed = deriveSeed(input.userId, input.isoDate);
-  const spreads = generateSpread(seed, input.spreadType);
+  // Use timestamp-based seed when forcing regeneration to get different cards
+  const seedForGeneration = input.force 
+    ? deriveSeed(input.userId, input.isoDate + Date.now().toString())
+    : deriveSeed(input.userId, input.isoDate);
+  
+  const spreads = generateSpread(seedForGeneration, input.spreadType);
 
   const cards = spreads.map((entry) =>
     cardDrawSchema.parse({
@@ -220,7 +237,7 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
       userId: input.userId,
       isoDate: input.isoDate,
       spreadType: input.spreadType,
-      hmac: seed
+      hmac: seedForGeneration
     },
     intent: input.intent,
     cards,

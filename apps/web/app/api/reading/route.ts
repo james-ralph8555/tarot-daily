@@ -49,13 +49,15 @@ export async function POST(request: Request) {
     payload?.spreadType === "single" || payload?.spreadType === "celtic-cross" ? payload.spreadType : "three-card";
   const intent = typeof payload?.intent === "string" ? payload.intent.slice(0, 280) : undefined;
   const tone = typeof payload?.tone === "string" ? payload.tone : undefined;
+  const force = payload?.force === true;
 
   const { reading, created } = await ensureReading({
     userId: auth.user.id,
     isoDate,
     intent,
     spreadType,
-    tone
+    tone,
+    force
   });
 
   if (payload?.stream === false) {

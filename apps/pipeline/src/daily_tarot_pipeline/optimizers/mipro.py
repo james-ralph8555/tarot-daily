@@ -51,7 +51,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     dspy.settings.configure(lm=lm)
 
     module = TarotReadingModule()
-    optimizer = dspy.MIPROv2(module, train_kwargs={"temperature": 0.7})
+    optimizer = dspy.MIPROv2(metric=lambda gold, pred: _metric_fn(gold, pred), init_temperature=0.7)
 
     dataset = [
         {
@@ -72,8 +72,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
         for example in training_examples
     ]
 
-    objective = dspy.Objective(dataset=dataset, metric=lambda gold, pred: _metric_fn(gold, pred))
-    result = optimizer.compile(objective)
+    result = optimizer.compile(module, trainset=dataset)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     prompt_path = output_dir / "prompt.txt"

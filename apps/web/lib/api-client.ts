@@ -8,6 +8,7 @@ export interface StreamOptions {
   isoDate?: string;
   spreadType?: "single" | "three-card" | "celtic-cross";
   tone?: string;
+  force?: boolean;
 }
 
 export async function streamReading(options: StreamOptions, onEvent: (event: StreamingChunk) => void) {
@@ -22,6 +23,7 @@ export async function streamReading(options: StreamOptions, onEvent: (event: Str
       isoDate: options.isoDate,
       spreadType: options.spreadType,
       tone: options.tone,
+      force: options.force,
       stream: true
     }),
     credentials: "include",
