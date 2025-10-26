@@ -5,6 +5,7 @@ import { deriveSeed, generateSpread, type SpreadType } from "../lib/seed";
 import { createChatCompletion, type ChatMessage } from "./groq";
 import { getEnv } from "./config";
 import { query, run } from "./db";
+import { normalizeTimestamp } from "./time";
 
 type ReadingRecord = {
   id: string;
@@ -55,8 +56,18 @@ export async function ensureReading(input: ReadingRequestInput): Promise<Reading
     return { reading: existing, created: false };
   }
 
-  const result = await generateReading(input);
-  return { reading: result, created: true };
+  try {
+    const result = await generateReading(input);
+    return { reading: result, created: true };
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      const retry = await findReading(input.userId, input.isoDate);
+      if (retry) {
+        return { reading: retry, created: false };
+      }
+    }
+    throw error;
+  }
 }
 
 async function findReading(userId: string, isoDate: string): Promise<Reading | null> {
@@ -86,7 +97,7 @@ async function findReading(userId: string, isoDate: string): Promise<Reading | n
     synthesis: record.synthesis,
     actionableReflection: record.actionable_reflection,
     tone: record.tone,
-    createdAt: record.created_at,
+    createdAt: normalizeTimestamp(record.created_at),
     model: record.model
   });
 }
@@ -126,7 +137,7 @@ export async function listReadings(options: ReadingHistoryOptions): Promise<Read
       synthesis: record.synthesis,
       actionableReflection: record.actionable_reflection,
       tone: record.tone,
-      createdAt: record.created_at,
+      createdAt: normalizeTimestamp(record.created_at),
       model: record.model
     })
   );
@@ -324,4 +335,8 @@ function buildUserPrompt(input: {
       meaning: card.orientation === "upright" ? card.uprightMeaning : card.reversedMeaning
     }))
   };
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return error instanceof Error && /Duplicate key/i.test(error.message);
 }

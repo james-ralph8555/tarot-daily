@@ -3,6 +3,7 @@ import { Scrypt } from "oslo/password";
 import { parse as parseCookie, serialize } from "cookie";
 import { getEnv } from "./config";
 import { query, run } from "./db";
+import { normalizeTimestamp, parseTimestamp } from "./time";
 
 type DatabaseUser = {
   id: string;
@@ -61,34 +62,30 @@ export async function createEmailPasswordUser(email: string, password: string) {
     console.log("User inserted successfully");
   } catch (error) {
     console.error("Failed to insert user:", error);
+    if (error instanceof Error && /Duplicate key/i.test(error.message)) {
+      throw new Error("Email already registered");
+    }
     throw error;
   }
   return userId;
 }
 
 export async function authenticateWithPassword(email: string, password: string) {
-  const rows = await query(
+  const rows = await query<DatabaseUser>(
     `SELECT id, email, hashed_password, created_at FROM users WHERE email = ?`,
     { params: [email] }
   );
-  
+
   if (!rows.length) {
     throw new Error("Invalid credentials");
   }
-  
-  // DuckDB returns arrays, so we need to map them to the expected object structure
-  const row = rows[0] as string[];
-  const user = {
-    id: row[0],
-    email: row[1], 
-    hashed_password: row[2],
-    created_at: row[3]
-  };
-  
+
+  const user = rows[0];
   const valid = await new Scrypt().verify(user.hashed_password, password);
   if (!valid) {
     throw new Error("Invalid credentials");
   }
+
   return user.id;
 }
 
@@ -133,11 +130,21 @@ export async function invalidateSession(sessionId: string): Promise<void> {
   await run(`DELETE FROM sessions WHERE id = ?`, { params: [sessionId] });
 }
 
+type SessionWithUserRecord = {
+  id: string;
+  user_id: string;
+  csrf_token: string;
+  expires_at: string;
+  created_at: string;
+  user_email: string;
+  user_created_at: string;
+};
+
 export async function validateRequest(request: Request): Promise<{ session: Session; user: User } | null> {
   const sessionId = readSessionIdFromRequest(request);
   if (!sessionId) return null;
   
-  const rows = await query(
+  const rows = await query<SessionWithUserRecord>(
     `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.created_at, u.email as user_email, u.created_at as user_created_at 
      FROM sessions s 
      JOIN users u ON s.user_id = u.id 
@@ -148,15 +155,13 @@ export async function validateRequest(request: Request): Promise<{ session: Sess
   if (!rows.length) {
     return null;
   }
-  
-  // DuckDB returns arrays, so we need to map them to the expected object structure
-  // Query returns: [s.id, s.user_id, s.csrf_token, s.expires_at, s.created_at, u.email, u.created_at]
-  const row = rows[0] as string[];
+
+  const row = rows[0];
   const session: Session = {
-    id: row[0],
-    userId: row[1],
-    csrfToken: row[2],
-    expiresAt: new Date(row[3])
+    id: row.id,
+    userId: row.user_id,
+    csrfToken: row.csrf_token,
+    expiresAt: parseTimestamp(row.expires_at)
   };
   
   if (Date.now() >= session.expiresAt.getTime()) {
@@ -165,9 +170,9 @@ export async function validateRequest(request: Request): Promise<{ session: Sess
   }
   
   const user: User = {
-    id: row[1],
-    email: row[5],
-    createdAt: row[6]
+    id: row.user_id,
+    email: row.user_email,
+    createdAt: normalizeTimestamp(row.user_created_at)
   };
   
   return { session, user };

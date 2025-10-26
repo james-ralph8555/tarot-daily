@@ -165,7 +165,7 @@ export async function query<T = unknown>(sql: string, options: QueryOptions = {}
     }) || [];
     
     const reader = await conn.runAndReadAll(sql, params);
-    return reader.getRowsJson() as T[];
+    return reader.getRowObjectsJson() as T[];
   } finally {
     conn.closeSync();
   }
