@@ -1,0 +1,33 @@
+Metadata-Version: 2.4
+Name: daily-tarot-pipeline
+Version: 0.1.0
+Summary: Offline DSPy optimization and analytics pipeline for Tarot Daily
+Author: Daily Tarot
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: dspy-ai>=2.4.0
+Requires-Dist: duckdb>=0.10.2
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: typer[all]>=0.9.0
+Requires-Dist: pydantic>=2.6.3
+Requires-Dist: rich>=13.7.1
+Requires-Dist: pandas>=2.2.1
+Provides-Extra: dev
+Requires-Dist: pytest>=8.1.1; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23.5; extra == "dev"
+
+# Daily Tarot Pipeline
+
+DSPy-driven offline prompt optimization, evaluation, and analytics for the Tarot Daily product. The CLI exposes
+cohesive workflows for ingesting feedback, building datasets, running optimizers such as MIPROv2, and evaluating new
+prompt variants before promotion.
+
+```
+# Bootstrap environment
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+
+# Run nightly job
+tarot-pipeline nightly
+```

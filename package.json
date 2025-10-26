@@ -1,0 +1,19 @@
+{
+  "name": "daily-tarot",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "format": "npm run format --workspaces"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
