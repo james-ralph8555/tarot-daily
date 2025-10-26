@@ -1,6 +1,6 @@
 # Database Initialization
 
-The pipeline requires a DuckDB database with the proper schema to function. The database schema is defined in the web application and must be initialized before running the pipeline.
+The pipeline requires a PostgreSQL database with the proper schema to function. The database schema is defined in the web application and must be initialized before running the pipeline.
 
 ## How to Initialize the Database
 
@@ -13,4 +13,4 @@ cd apps/web
 npm run dev
 ```
 
-The web app will create the database at `var/data/tarot.duckdb` (or the path specified by `DUCKDB_PATH` environment variable) and initialize all necessary tables.
+The web app will connect to PostgreSQL using the `DATABASE_URL` environment variable and initialize all necessary tables.

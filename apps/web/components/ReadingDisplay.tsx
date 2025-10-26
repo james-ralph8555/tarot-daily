@@ -1,5 +1,5 @@
-import type { Reading } from "@daily-tarot/common";
-import { getTarotCardById } from "@daily-tarot/common";
+import type { Reading } from "../lib/common";
+import { getTarotCardById } from "../lib/common";
 import { useEffect, useRef, useState } from "react";
 
 // Custom hook for 3D card tilt effect

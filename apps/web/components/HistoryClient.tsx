@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from "react";
-import type { Reading } from "@daily-tarot/common";
-import { getTarotCardById } from "@daily-tarot/common";
+import type { Reading } from "../lib/common";
+import { getTarotCardById } from "../lib/common";
 import { Navigation } from "./Navigation";
 
 interface HistoryClientProps {

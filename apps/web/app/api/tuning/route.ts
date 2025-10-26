@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/server/db';
-import { duckDbTables } from '@daily-tarot/common';
+import { tables } from '../../../lib/common';
 
 export async function GET(request: NextRequest) {
   try {
@@ -31,8 +31,8 @@ export async function GET(request: NextRequest) {
         COUNT(er.id) as evaluation_count,
         AVG((er.metrics->>'overall_score')::FLOAT) as avg_score,
         MAX(er.created_at) as last_evaluation
-      FROM ${duckDbTables.prompts} pv
-      LEFT JOIN ${duckDbTables.evaluations} er ON pv.id = er.prompt_version
+      FROM ${tables.prompts} pv
+      LEFT JOIN ${tables.evaluations} er ON pv.id = er.prompt_version
       ${whereClause}
       GROUP BY pv.id, pv.prompt, pv.active, pv.created_at
       ORDER BY pv.created_at DESC
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 
     // Get total count for pagination
     const totalResult = await query<{ total: number }>(`
-      SELECT COUNT(*) as total FROM ${duckDbTables.prompts} pv
+      SELECT COUNT(*) as total FROM ${tables.prompts} pv
       ${whereClause}
     `, { params });
 
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
             null as guardrail_violations,
             0 as sample_size,
             created_at
-          FROM ${duckDbTables.evaluations}
+          FROM ${tables.evaluations}
           WHERE prompt_version = $1
           ORDER BY created_at DESC
         `, { params: [version.id] });

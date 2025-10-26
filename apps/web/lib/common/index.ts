@@ -85,7 +85,7 @@ export const apiErrorSchema = z.object({
 
 export type ApiError = z.infer<typeof apiErrorSchema>;
 
-export const duckDbTables = {
+export const tables = {
   users: "users",
   sessions: "sessions",
   userKeys: "user_keys",
@@ -98,7 +98,7 @@ export const duckDbTables = {
   trainingDatasets: "training_datasets"
 } as const;
 
-export type DuckDbTable = (typeof duckDbTables)[keyof typeof duckDbTables];
+export type Table = (typeof tables)[keyof typeof tables];
 
 export const promptVersionSchema = z.object({
   id: z.string().min(1),

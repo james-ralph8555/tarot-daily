@@ -1,6 +1,6 @@
 'use client';
 
-import type { Feedback, Reading, StreamingChunk } from "@daily-tarot/common";
+import type { Feedback, Reading, StreamingChunk } from "../lib/common";
 
 export interface StreamOptions {
   signal?: AbortSignal;

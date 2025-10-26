@@ -1,22 +1,62 @@
-# Daily Tarot Monorepo
+# Daily Tarot
 
-Deterministic daily tarot readings delivered via a SolidStart SSR web app and a Python DSPy pipeline.
+AI powered daily tarot readings with NextJS web app and Python DSPy pipeline.
+
+![Homepage](public/homepage.jpg)
 
 ## Prerequisites
-- Docker (optional, for container builds)
 
-Copy the appropriate template from `infra/env/*.env` to `.env` files at the repo root and within `apps/web`. Populate
-the placeholders such as `GROQ_API_KEY`, `HMAC_SECRET`, Lucia session secrets, and VAPID keys before running locally.
+- Docker
+- Node.js 22+
+- Python 3.13+
 
 ## Quick Start
 
+1. **Install dependencies**
 ```bash
-tarot-pipeline --help
-tarot-pipeline nightly
+npm install
+cd apps/pipeline && pip install -e .
 ```
 
-## Repository Layout
-- `apps/web` – SolidStart app, API routes, Lucia auth, and PWA assets.
-- `apps/pipeline` – DSPy pipelines, DuckDB schema, and Typer CLI entrypoints.
-- `packages/common` – Shared TypeScript models and Zod schemas.
-- `infra` – Environment manifests and operational docs.
+2. **Setup environment**
+```bash
+# Create .env files from templates (check infra/ for templates)
+# Populate API keys and database connection strings
+```
+
+3. **Start database**
+```bash
+docker-compose up -d postgres
+```
+
+4. **Run development servers**
+```bash
+# Web app
+cd apps/web && npm run dev
+
+# Pipeline CLI
+tarot-pipeline dataset build
+```
+
+## Project Structure
+
+- `apps/web/` – NextJS app with API routes and auth
+- `apps/pipeline/` – DSPy optimization pipeline with Typer CLI
+
+- `infra/` – Database schemas and deployment configs
+
+## Commands
+
+```bash
+# Build all workspaces
+npm run build
+
+# Lint all workspaces  
+npm run lint
+
+# Format all workspaces
+npm run format
+
+# Reset database
+docker-compose down -v && docker-compose up -d postgres
+```

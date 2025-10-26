@@ -11,7 +11,15 @@ const envSchema = z.object({
   PUSH_VAPID_PUBLIC_KEY: z.string().min(1, "PUSH_VAPID_PUBLIC_KEY is required"),
   PUSH_VAPID_PRIVATE_KEY: z.string().min(1, "PUSH_VAPID_PRIVATE_KEY is required"),
   PUSH_CONTACT_EMAIL: z.string().email().default("support@example.com"),
-  DUCKDB_PATH: z.string().optional()
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required").optional()
+}).transform((data) => {
+  if (process.env.NEXT_PHASE === 'phase-production-build' && !data.DATABASE_URL) {
+    return data;
+  }
+  if (!data.DATABASE_URL && process.env.NODE_ENV !== 'development') {
+    throw new Error('DATABASE_URL is required');
+  }
+  return data;
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from "react";
-import type { Feedback, Reading } from "@daily-tarot/common";
+import type { Feedback, Reading } from "../lib/common";
 import { useRouter } from "next/navigation";
 import { fetchReading, streamReading } from "../lib/api-client";
 import { FeedbackWidget } from "./FeedbackWidget";
@@ -201,7 +201,7 @@ function Callouts(props: { isStreaming: boolean }) {
           or ascend.
         </p>
         <p className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-200/80">
-          {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS | Pipeline: DSPy <-> DuckDB"}
+          {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS | Pipeline: DSPy <-> PostgreSQL"}
         </p>
       </div>
     </div>

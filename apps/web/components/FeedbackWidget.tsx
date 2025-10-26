@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from "react";
-import type { Feedback } from "@daily-tarot/common";
+import type { Feedback } from "../lib/common";
 import { submitFeedback } from "../lib/api-client";
 
 interface FeedbackWidgetProps {

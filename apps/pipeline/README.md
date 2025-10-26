@@ -24,14 +24,14 @@ docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline .
 ### Run the pipeline in Docker
 ```bash
 # Run nightly job with database volume
-docker run --rm -v $(pwd)/apps/web/var/data/dev-tarot.duckdb:/app/data/dev-tarot.duckdb daily-tarot-pipeline nightly
+docker run --rm -v $(pwd)/apps/web/var/data/postgres-data:/var/lib/postgresql/data daily-tarot-pipeline nightly
 
 # Run with environment variables
-docker run --rm -v $(pwd)/apps/web/var/data/dev-tarot.duckdb:/app/data/dev-tarot.duckdb -e GROQ_API_KEY=your_key daily-tarot-pipeline nightly
+docker run --rm -v $(pwd)/apps/web/var/data/postgres-data:/var/lib/postgresql/data -e GROQ_API_KEY=your_key daily-tarot-pipeline nightly
 ```
 
 ### Development with Docker
 ```bash
 # Build and run in one command
-docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm -v $(pwd)/apps/web/var/data/dev-tarot.duckdb:/app/data/dev-tarot.duckdb daily-tarot-pipeline nightly
+docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm -v $(pwd)/apps/web/var/data/postgres-data:/var/lib/postgresql/data daily-tarot-pipeline nightly
 ```

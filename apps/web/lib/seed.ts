@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import { tarotDeck, type TarotCard } from "@daily-tarot/common";
+import { tarotDeck, type TarotCard } from "../lib/common";
 import { getEnv } from "../server/config";
 import { createRng, deterministicShuffle } from "./random";
 

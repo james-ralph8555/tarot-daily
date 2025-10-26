@@ -1,12 +1,12 @@
 # Experiment Playbook
 
-This playbook outlines the nightly and ad-hoc workflow for prompt experimentation with DSPy and DuckDB.
+This playbook outlines the nightly and ad-hoc workflow for prompt experimentation with DSPy and PostgreSQL.
 
 ## 1. Data Readiness
-1. Ensure production feedback has synced into DuckDB (`feedback`, `readings` tables).
+1. Ensure production feedback has synced into PostgreSQL (`feedback`, `readings` tables).
 2. Run `tarot-pipeline dataset build <name>` to generate the latest training dataset. Use descriptive names such as
    `nightly_YYYYMMDD`.
-3. Confirm dataset ingestion via `SELECT COUNT(*) FROM training_datasets WHERE dataset = '<name>'` in DuckDB.
+3. Confirm dataset ingestion via `SELECT COUNT(*) FROM training_datasets WHERE dataset = '<name>'` in PostgreSQL.
 
 ## 2. Optimization
 1. Execute `tarot-pipeline optimize mipro <name>` to launch MIPROv2 against the dataset.
@@ -27,5 +27,5 @@ This playbook outlines the nightly and ad-hoc workflow for prompt experimentatio
 ## 5. Canary & Promotion
 1. Promote candidate to a 10% traffic slice by updating feature flag config (see `infra/scripts/feature-flags.json`).
 2. Observe metrics & qualitative feedback for 24h.
-3. If successful, set `prompt_versions.status = 'promoted'`, record evaluation in DuckDB, and tag the prompt commit.
+3. If successful, set `prompt_versions.status = 'promoted'`, record evaluation in PostgreSQL, and tag the prompt commit.
 4. If regression observed, follow rollback procedure.

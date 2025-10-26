@@ -1,4 +1,4 @@
-import { cardDrawSchema, readingSchema, type Reading } from "@daily-tarot/common";
+import { cardDrawSchema, readingSchema, type Reading } from "../lib/common";
 import { z } from "zod";
 import { randomUUID } from "crypto";
 import { deriveSeed, generateSpread, type SpreadType } from "../lib/seed";

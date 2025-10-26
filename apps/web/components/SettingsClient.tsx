@@ -75,7 +75,7 @@ export function SettingsClient(props: SettingsClientProps) {
 
                   <SettingCard
                     title="Export data"
-                    description="Download all readings, feedback, and seeds as a JSON bundle. We extract directly from DuckDB when ready."
+                    description="Download all readings, feedback, and seeds as a JSON bundle. We extract directly from PostgreSQL when ready."
                   >
                     <button
                       type="button"

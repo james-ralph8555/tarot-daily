@@ -1,5 +1,5 @@
-import type { PushSubscription } from "@daily-tarot/common";
-import { pushSubscriptionSchema } from "@daily-tarot/common";
+import type { PushSubscription } from "../lib/common";
+import { pushSubscriptionSchema } from "../lib/common";
 import { query, run } from "./db";
 
 type PushRecord = {

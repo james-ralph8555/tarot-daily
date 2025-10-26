@@ -7,13 +7,6 @@ const nextConfig = {
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push({
-        duckdb: "commonjs duckdb",
-        "@duckdb/node-bindings": "commonjs @duckdb/node-bindings",
-        "@duckdb/node-bindings-linux-x64": "commonjs @duckdb/node-bindings-linux-x64",
-        "@duckdb/node-bindings-linux-arm64": "commonjs @duckdb/node-bindings-linux-arm64",
-        "@duckdb/node-bindings-darwin-x64": "commonjs @duckdb/node-bindings-darwin-x64",
-        "@duckdb/node-bindings-darwin-arm64": "commonjs @duckdb/node-bindings-darwin-arm64",
-        "@duckdb/node-bindings-win32-x64": "commonjs @duckdb/node-bindings-win32-x64",
         "@node-rs/argon2": "commonjs @node-rs/argon2",
         "@node-rs/argon2-linux-x64-gnu": "commonjs @node-rs/argon2-linux-x64-gnu",
         "@node-rs/argon2-linux-x64-musl": "commonjs @node-rs/argon2-linux-x64-musl",

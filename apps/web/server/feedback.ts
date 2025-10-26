@@ -1,4 +1,4 @@
-import { feedbackSchema, type Feedback } from "@daily-tarot/common";
+import { feedbackSchema, type Feedback } from "../lib/common";
 import { query, run } from "./db";
 
 type FeedbackRecord = {

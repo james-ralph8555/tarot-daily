@@ -69,7 +69,7 @@ export default async function LegalPage() {
               </p>
               <p className="reading-text">
                 By using the service you consent to the collection of feedback data—thumbs up/down signals, optional rationale,
-                and interaction metadata—for the purpose of improving prompt quality. Identifiers are stored in DuckDB with
+                and interaction metadata—for the purpose of improving prompt quality. Identifiers are stored in PostgreSQL with
                 strict access controls.
               </p>
               <p className="reading-text">

@@ -1,4 +1,4 @@
-import type { Reading } from "@daily-tarot/common";
+import type { Reading } from "../../../lib/common";
 import { json } from "../../../lib/json";
 import { ensureReading } from "../../../server/reading";
 import type { SpreadType } from "../../../lib/seed";

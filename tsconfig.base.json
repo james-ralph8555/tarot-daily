@@ -12,11 +12,7 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
-    "paths": {
-      "@daily-tarot/common/*": [
-        "packages/common/src/*"
-      ]
-    },
+    "paths": {},
     "types": [
       "node"
     ]
