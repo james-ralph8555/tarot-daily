@@ -12,6 +12,11 @@ export async function GET(request: Request) {
   if (!auth) {
     return json({ error: "unauthorized" }, { status: 401 });
   }
+  
+  if (!auth.user.id) {
+    return json({ error: "invalid_user" }, { status: 401 });
+  }
+  
   const url = new URL(request.url);
   const isoDate = url.searchParams.get("date") ?? nowIsoDate();
   const spreadType = (url.searchParams.get("spread") as SpreadType | null) ?? "three-card";
@@ -27,6 +32,10 @@ export async function POST(request: Request) {
   const auth = await validateRequest(request);
   if (!auth) {
     return json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  if (!auth.user.id) {
+    return json({ error: "invalid_user" }, { status: 401 });
   }
 
   const csrfValid = validateCsrf(readCsrfToken(request), request.headers.get("x-csrf-token"));

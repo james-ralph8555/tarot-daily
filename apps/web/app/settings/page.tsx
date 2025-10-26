@@ -3,7 +3,7 @@ import { SettingsClient } from "../../components/SettingsClient";
 import { validateRequestFromHeaders } from "../../server/auth";
 
 export default async function SettingsPage() {
-  const headerList = headers();
+  const headerList = await headers();
   const auth = await validateRequestFromHeaders(headerList);
   const user = auth
     ? {

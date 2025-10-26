@@ -1,4 +1,5 @@
 import { cardDrawSchema, readingSchema, type Reading } from "@daily-tarot/common";
+import { z } from "zod";
 import { nanoid } from "nanoid";
 import { deriveSeed, generateSpread, type SpreadType } from "../lib/seed";
 import { createChatCompletion, type ChatMessage } from "./groq";
@@ -142,6 +143,11 @@ export async function listReadings(options: ReadingHistoryOptions): Promise<Read
 async function generateReading(input: ReadingRequestInput): Promise<Reading> {
   const env = getEnv();
   const promptVersion = input.promptVersion ?? "v1.deterministic";
+  
+  if (!input.userId) {
+    throw new Error("userId is required but was not provided");
+  }
+  
   const seed = deriveSeed(input.userId, input.isoDate);
   const spreads = generateSpread(seed, input.spreadType);
 
@@ -176,22 +182,43 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
   ];
 
   const completion = await createChatCompletion(messages);
-  const parsed = readingSchema.safeParse(JSON.parse(completion.content));
+  const aiResponse = JSON.parse(completion.content);
+  
+  // Validate the AI response structure
+  const aiResponseSchema = z.object({
+    overview: z.string().min(1),
+    cardBreakdowns: z.array(
+      z.object({
+        cardId: z.string().min(1),
+        orientation: z.enum(["upright", "reversed"]),
+        summary: z.string().min(1)
+      })
+    ),
+    synthesis: z.string().min(1),
+    actionableReflection: z.string().min(1)
+  });
+  
+  const parsed = aiResponseSchema.safeParse(aiResponse);
   if (!parsed.success) {
     throw new Error(`Groq response failed validation: ${parsed.error.message}`);
   }
 
   const record: Reading = {
-    ...parsed.data,
-    id: parsed.data.id ?? nanoid(),
+    id: nanoid(),
     seed: {
       userId: input.userId,
       isoDate: input.isoDate,
       spreadType: input.spreadType,
       hmac: seed
     },
+    intent: input.intent,
     cards,
     promptVersion,
+    overview: parsed.data.overview,
+    cardBreakdowns: parsed.data.cardBreakdowns,
+    synthesis: parsed.data.synthesis,
+    actionableReflection: parsed.data.actionableReflection,
+    tone: input.tone ?? "warm-analytical",
     createdAt: new Date().toISOString(),
     model: completion.raw && typeof completion.raw === "object" && "model" in (completion.raw as Record<string, unknown>)
       ? ((completion.raw as Record<string, unknown>).model as Reading["model"])
@@ -251,20 +278,6 @@ function buildSystemPrompt() {
 You are an ethical tarot companion. Always include a concise wellness disclaimer stating that the reading is for reflection only and not medical, legal, or financial advice.
 Respond strictly as minified JSON matching this TypeScript interface:
 {
-  "id": string;
-  "seed": {
-    "userId": string;
-    "isoDate": string;
-    "spreadType": "single" | "three-card" | "celtic-cross";
-    "hmac": string;
-  };
-  "intent"?: string;
-  "cards": Array<{
-    "cardId": string;
-    "orientation": "upright" | "reversed";
-    "position": string;
-  }>;
-  "promptVersion": string;
   "overview": string;
   "cardBreakdowns": Array<{
     "cardId": string;
@@ -273,9 +286,6 @@ Respond strictly as minified JSON matching this TypeScript interface:
   }>;
   "synthesis": string;
   "actionableReflection": string;
-  "tone": string;
-  "createdAt": string;
-  "model": "openai/gpt-oss-20b" | "openai/gpt-oss-120b";
 }
 Every section must be concise yet specific. Mention each card exactly once in overview and relevant breakdowns.
 `.trim();

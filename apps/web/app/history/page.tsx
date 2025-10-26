@@ -4,7 +4,7 @@ import { validateRequestFromHeaders } from "../../server/auth";
 import { listReadings } from "../../server/reading";
 
 export default async function HistoryPage() {
-  const headerList = headers();
+  const headerList = await headers();
   const auth = await validateRequestFromHeaders(headerList);
   const user = auth
     ? {

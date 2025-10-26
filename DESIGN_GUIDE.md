@@ -1,5 +1,6 @@
 # Tarot Daily — Sacred Aesthetic UI System
 
+NOTE: SOLIDJS IS GONE !!! WE USE NEXT.JS NOW 
 *A practical, production-ready visual language for a daily Tarot experience inspired by Catholic mysticism, Gnostic cosmology, and Hermetic symbolism — without kitsch or appropriation.*
 
 ---
@@ -376,3 +377,6 @@ export function Feedback(props: { onSubmit: (p:{thumb:1|-1; tags:string[]; ratio
 
 *Drop these into your SolidStart project and the site will immediately take on the “Serene revelation” skin without touching app logic.*
 
+
+NOTE: SOLIDJS IS GONE !!! WE USE NEXT.JS NOW 
+IMPLEMETN WITH COMPLETE REIMAGING OF EXISTING UI

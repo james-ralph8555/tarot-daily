@@ -15,12 +15,12 @@ export async function storePushSubscription(userId: string, payload: unknown) {
   await run(
     `
       INSERT INTO push_subscriptions (user_id, endpoint, expiration_time, keys, created_at)
-      VALUES (?, ?, ?, ?, current_timestamp)
+      VALUES (?, ?, ?, ?, ?)
       ON CONFLICT (endpoint)
       DO UPDATE SET user_id = excluded.user_id, expiration_time = excluded.expiration_time, keys = excluded.keys
     `,
     {
-      params: [userId, parsed.endpoint, parsed.expirationTime, JSON.stringify(parsed.keys)]
+      params: [userId, parsed.endpoint, parsed.expirationTime, JSON.stringify(parsed.keys), new Date().toISOString()]
     }
   );
   return parsed;

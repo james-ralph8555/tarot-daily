@@ -4,7 +4,7 @@ import { LoginForm } from "./LoginForm";
 import { validateRequestFromHeaders } from "../../server/auth";
 
 export default async function LoginPage() {
-  const auth = await validateRequestFromHeaders(headers());
+  const auth = await validateRequestFromHeaders(await headers());
   if (auth?.user) {
     redirect("/");
   }

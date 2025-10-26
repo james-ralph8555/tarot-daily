@@ -28,7 +28,7 @@ export function ReadingDisplay(props: ReadingDisplayProps) {
               {props.reading.cardBreakdowns.map((item) => (
                 <div key={item.cardId} className="rounded border border-indigo-500/40 bg-indigo-900/30 p-3">
                   <h4 className="text-sm font-semibold text-amber-200">
-                    {formatCardTitle(props.reading.cards, item.cardId)}
+                    {formatCardTitle(props.reading!.cards, item.cardId)}
                   </h4>
                   <p className="mt-2 text-sm text-slate-200/80">
                     {props.streaming?.[`card:${item.cardId}`] ?? item.summary}

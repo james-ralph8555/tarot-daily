@@ -31,6 +31,9 @@ export function HomeClient(props: HomeClientProps) {
   }, [props.user?.id]);
 
   async function loadReading() {
+    if (!props.user) {
+      return;
+    }
     try {
       const existing = await fetchReading();
       setReading(existing);

@@ -4,7 +4,7 @@ import { RegisterForm } from "./RegisterForm";
 import { validateRequestFromHeaders } from "../../server/auth";
 
 export default async function RegisterPage() {
-  const auth = await validateRequestFromHeaders(headers());
+  const auth = await validateRequestFromHeaders(await headers());
   if (auth?.user) {
     redirect("/");
   }

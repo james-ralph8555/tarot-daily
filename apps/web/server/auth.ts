@@ -1,7 +1,6 @@
 import { createHmac, randomBytes } from "node:crypto";
 import { Scrypt } from "oslo/password";
 import { parse as parseCookie, serialize } from "cookie";
-import { Lucia } from "lucia";
 import { getEnv } from "./config";
 import { query, run } from "./db";
 
@@ -20,152 +19,7 @@ type DatabaseSession = {
   created_at: string;
 };
 
-const adapter = {
-  getUser: async (userId: string) => {
-    const rows = await query<DatabaseUser>(
-      `SELECT id, email, hashed_password, created_at FROM users WHERE id = ?`,
-      { params: [userId] }
-    );
-    if (!rows.length) return null;
-    const row = rows[0];
-    return {
-      id: row.id,
-      email: row.email,
-      hashedPassword: row.hashed_password,
-      createdAt: row.created_at
-    };
-  },
-
-  getSessionAndUser: async (sessionId: string) => {
-    const rows = await query<DatabaseSession & DatabaseUser>(
-      `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.created_at, u.email, u.hashed_password, u.created_at as user_created_at 
-       FROM sessions s 
-       JOIN users u ON s.user_id = u.id 
-       WHERE s.id = ?`,
-      { params: [sessionId] }
-    );
-    if (!rows.length) return null;
-    const row = rows[0];
-    return {
-      user: {
-        id: row.user_id,
-        email: row.email,
-        hashedPassword: row.hashed_password,
-        createdAt: row.user_created_at
-      },
-      session: {
-        id: row.id,
-        userId: row.user_id,
-        csrfToken: row.csrf_token,
-        expiresAt: new Date(row.expires_at)
-      }
-    };
-  },
-
-  getUserSessions: async (userId: string) => {
-    const rows = await query<DatabaseSession>(
-      `SELECT id, user_id, csrf_token, expires_at, created_at FROM sessions WHERE user_id = ?`,
-      { params: [userId] }
-    );
-    return rows.map((row) => ({
-      id: row.id,
-      userId: row.user_id,
-      csrfToken: row.csrf_token,
-      expiresAt: new Date(row.expires_at)
-    }));
-  },
-
-  setUser: async (user: any) => {
-    await run(
-      `INSERT INTO users (id, email, hashed_password, created_at) VALUES (?, ?, ?, current_timestamp)`,
-      {
-        params: [user.id, user.email, user.hashedPassword]
-      }
-    );
-  },
-
-  updateUser: async (userId: string, attributes: any) => {
-    if (!attributes.email && !attributes.hashedPassword) return;
-    const sets: string[] = [];
-    const params: unknown[] = [];
-    if (attributes.email) {
-      sets.push("email = ?");
-      params.push(attributes.email);
-    }
-    if (attributes.hashedPassword) {
-      sets.push("hashed_password = ?");
-      params.push(attributes.hashedPassword);
-    }
-    params.push(userId);
-    await run(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`, { params });
-  },
-
-  deleteUser: async (userId: string) => {
-    await run(`DELETE FROM sessions WHERE user_id = ?`, { params: [userId] });
-    await run(`DELETE FROM users WHERE id = ?`, { params: [userId] });
-  },
-
-  setSession: async (session: any) => {
-    await run(
-      `INSERT INTO sessions (id, user_id, csrf_token, expires_at, created_at) VALUES (?, ?, ?, ?, current_timestamp)`,
-      {
-        params: [session.id, session.userId, session.csrfToken, session.expiresAt.toISOString()]
-      }
-    );
-  },
-
-  updateSession: async (sessionId: string, attributes: any) => {
-    const sets: string[] = [];
-    const params: unknown[] = [];
-    if (attributes.csrfToken) {
-      sets.push("csrf_token = ?");
-      params.push(attributes.csrfToken);
-    }
-    if (attributes.expiresAt) {
-      sets.push("expires_at = ?");
-      params.push(attributes.expiresAt.toISOString());
-    }
-    if (!sets.length) return;
-    params.push(sessionId);
-    await run(`UPDATE sessions SET ${sets.join(", ")} WHERE id = ?`, { params });
-  },
-
-  deleteSession: async (sessionId: string) => {
-    await run(`DELETE FROM sessions WHERE id = ?`, { params: [sessionId] });
-  },
-
-  deleteUserSessions: async (userId: string) => {
-    await run(`DELETE FROM sessions WHERE user_id = ?`, { params: [userId] });
-  },
-
-  deleteExpiredSessions: async () => {
-    await run(`DELETE FROM sessions WHERE expires_at < current_timestamp`);
-  }
-};
-
 const env = getEnv();
-
-export const lucia = new Lucia(adapter, {
-  sessionExpiresIn: {
-    activePeriod: 60 * 60 * 24 * 30, // 30 days
-    idlePeriod: 60 * 60 * 24 * 30 // 30 days
-  },
-  sessionCookie: {
-    name: "dt_session",
-    expires: false,
-    attributes: {
-      secure: env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/"
-    }
-  },
-  getUserAttributes: (attributes) => {
-    return {
-      email: attributes.email,
-      createdAt: attributes.createdAt
-    };
-  }
-});
 
 export interface Session {
   id: string;
@@ -189,27 +43,48 @@ function generateSessionId(): string {
 
 
 export async function createEmailPasswordUser(email: string, password: string) {
+  console.log("Creating user for email:", email);
   const hashedPassword = await new Scrypt().hash(password);
+  console.log("Hashed password created");
   const existing = await query<{ id: string }>(`SELECT id FROM users WHERE email = ?`, { params: [email] });
+  console.log("Existing users check completed:", existing.length);
   if (existing.length) {
     throw new Error("Email already registered");
   }
   const userId = cryptoRandomId();
-  await run(`INSERT INTO users (id, email, hashed_password, created_at) VALUES (?, ?, ?, current_timestamp)`, {
-    params: [userId, email, hashedPassword]
+  console.log("Generated user ID:", userId);
+  console.log("About to insert user with params:", [userId, email, hashedPassword.substring(0, 10) + "...", new Date().toISOString()]);
+  try {
+  await run(`INSERT INTO users (id, email, hashed_password, created_at) VALUES (?, ?, ?, ?)`, {
+    params: [userId, email, hashedPassword, new Date().toISOString()]
   });
+    console.log("User inserted successfully");
+  } catch (error) {
+    console.error("Failed to insert user:", error);
+    throw error;
+  }
   return userId;
 }
 
 export async function authenticateWithPassword(email: string, password: string) {
-  const rows = await query<DatabaseUser>(
+  const rows = await query(
     `SELECT id, email, hashed_password, created_at FROM users WHERE email = ?`,
     { params: [email] }
   );
+  
   if (!rows.length) {
     throw new Error("Invalid credentials");
   }
-  const user = rows[0];
+  
+  // DuckDB returns arrays, so we need to map them to the expected object structure
+  const row = rows[0] as string[];
+  const user = {
+    id: row[0],
+    email: row[1], 
+    hashed_password: row[2],
+    created_at: row[3]
+  };
+  
   const valid = await new Scrypt().verify(user.hashed_password, password);
   if (!valid) {
     throw new Error("Invalid credentials");
@@ -217,36 +92,91 @@ export async function authenticateWithPassword(email: string, password: string) 
   return user.id;
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string): Promise<{ session: Session; cookie: string; csrfToken: string; csrfCookie: string }> {
+  const now = new Date();
+  const sessionId = generateSessionId();
   const csrfToken = generateCsrfToken();
-  const session = await lucia.createSession(userId, { csrfToken });
-  const sessionCookie = lucia.createSessionCookie(session.id);
-  const cookie = serialize(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+  
+  const session: Session = {
+    id: sessionId,
+    userId,
+    csrfToken,
+    expiresAt: new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30) // 30 days
+  };
+  
+  await run(
+    `INSERT INTO sessions (id, user_id, csrf_token, expires_at, created_at) VALUES (?, ?, ?, ?, ?)`,
+    {
+      params: [session.id, session.userId, session.csrfToken, session.expiresAt.toISOString(), new Date().toISOString()]
+    }
+  );
+  
+  const cookie = serialize("dt_session", session.id, {
+    secure: env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    httpOnly: true,
+    expires: session.expiresAt
+  });
+  
+  const csrfCookie = createCsrfCookie(csrfToken);
+  
   return {
     session,
     cookie,
     csrfToken,
-    csrfCookie: createCsrfCookie(csrfToken)
+    csrfCookie
   };
 }
 
-export async function invalidateSession(sessionId: string) {
-  await lucia.invalidateSession(sessionId);
+export async function invalidateSession(sessionId: string): Promise<void> {
+  await run(`DELETE FROM sessions WHERE id = ?`, { params: [sessionId] });
 }
 
-export async function validateRequest(request: Request) {
-  const authRequest = lucia.createSessionRequest(request);
-  return authRequest.validate();
+export async function validateRequest(request: Request): Promise<{ session: Session; user: User } | null> {
+  const sessionId = readSessionIdFromRequest(request);
+  if (!sessionId) return null;
+  
+  const rows = await query(
+    `SELECT s.id, s.user_id, s.csrf_token, s.expires_at, s.created_at, u.email as user_email, u.created_at as user_created_at 
+     FROM sessions s 
+     JOIN users u ON s.user_id = u.id 
+     WHERE s.id = ?`,
+    { params: [sessionId] }
+  );
+  
+  if (!rows.length) {
+    return null;
+  }
+  
+  // DuckDB returns arrays, so we need to map them to the expected object structure
+  // Query returns: [s.id, s.user_id, s.csrf_token, s.expires_at, s.created_at, u.email, u.created_at]
+  const row = rows[0] as string[];
+  const session: Session = {
+    id: row[0],
+    userId: row[1],
+    csrfToken: row[2],
+    expiresAt: new Date(row[3])
+  };
+  
+  if (Date.now() >= session.expiresAt.getTime()) {
+    await run(`DELETE FROM sessions WHERE id = ?`, { params: [sessionId] });
+    return null;
+  }
+  
+  const user: User = {
+    id: row[1],
+    email: row[5],
+    createdAt: row[6]
+  };
+  
+  return { session, user };
 }
 
-export async function validateRequestFromHeaders(headersInit: HeadersInit) {
+export async function validateRequestFromHeaders(headersInit: HeadersInit): Promise<{ session: Session; user: User } | null> {
   const headers = headersInit instanceof Headers ? headersInit : new Headers(headersInit);
   const request = new Request("http://internal", { headers });
   return validateRequest(request);
-}
-
-export function handleAuthRequest(request: Request) {
-  return lucia.handleRequest(request);
 }
 
 export function readSessionIdFromRequest(request: Request) {
@@ -276,7 +206,13 @@ export function createCsrfCookie(token: string) {
 }
 
 export function createLogoutCookies() {
-  const blankSession = lucia.createBlankSessionCookie();
+  const blankSession = serialize("dt_session", "", {
+    secure: env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    httpOnly: true,
+    maxAge: 0
+  });
   const blankCsrf = serialize("dt_csrf", "", {
     secure: env.NODE_ENV === "production",
     sameSite: "strict",
@@ -285,15 +221,15 @@ export function createLogoutCookies() {
     maxAge: 0
   });
   return {
-    session: serialize(blankSession.name, blankSession.value, blankSession.attributes),
+    session: blankSession,
     csrf: blankCsrf
   };
 }
 
 export async function rotateCsrfToken(sessionId: string) {
   const token = generateCsrfToken();
-  await run(`UPDATE sessions SET csrf_token = ?, created_at = current_timestamp WHERE id = ?`, {
-    params: [token, sessionId]
+  await run(`UPDATE sessions SET csrf_token = ?, created_at = ? WHERE id = ?`, {
+    params: [token, new Date().toISOString(), sessionId]
   });
   return {
     token,

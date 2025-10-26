@@ -17,15 +17,16 @@ export interface UpsertFeedbackInput {
 }
 
 export async function upsertFeedback(input: UpsertFeedbackInput) {
+  const now = new Date().toISOString();
   await run(
     `
     INSERT INTO feedback (reading_id, user_id, thumb, rationale, created_at)
-    VALUES (?, ?, ?, ?, current_timestamp)
+    VALUES (?, ?, ?, ?, ?)
     ON CONFLICT (reading_id, user_id)
-    DO UPDATE SET thumb = excluded.thumb, rationale = excluded.rationale, created_at = current_timestamp
+    DO UPDATE SET thumb = excluded.thumb, rationale = excluded.rationale, created_at = ?
   `,
     {
-      params: [input.readingId, input.userId, input.thumb, input.rationale ?? null]
+      params: [input.readingId, input.userId, input.thumb, input.rationale ?? null, now, now]
     }
   );
   return getFeedback(input.readingId, input.userId);

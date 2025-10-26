@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "../server/db";
 
 export const metadata: Metadata = {
   title: "Tarot Daily",

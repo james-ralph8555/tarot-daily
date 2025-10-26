@@ -3,7 +3,7 @@ import { Navigation } from "../../components/Navigation";
 import { validateRequestFromHeaders } from "../../server/auth";
 
 export default async function LegalPage() {
-  const headerList = headers();
+  const headerList = await headers();
   const auth = await validateRequestFromHeaders(headerList);
   const user = auth
     ? {

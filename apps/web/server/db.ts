@@ -1,18 +1,18 @@
-import duckdb from "duckdb";
+import { DuckDBInstance, DuckDBValue } from "@duckdb/node-api";
 import fs from "node:fs";
 import path from "node:path";
 import { duckDbTables } from "@daily-tarot/common";
 
 const DEFAULT_DB_PATH = path.resolve(process.cwd(), "var/data/tarot.duckdb");
 
-let dbInstance: duckdb.Database | null = null;
+let dbInstance: DuckDBInstance | null = null;
 
-export function getDb(): duckdb.Database {
+export async function getDb(): Promise<DuckDBInstance> {
   if (!dbInstance) {
     const dbPath = process.env.DUCKDB_PATH ? path.resolve(process.cwd(), process.env.DUCKDB_PATH) : DEFAULT_DB_PATH;
     ensureDirectory(path.dirname(dbPath));
-    dbInstance = new duckdb.Database(dbPath);
-    initializeSchema(dbInstance);
+    dbInstance = await DuckDBInstance.create(dbPath);
+    await initializeSchema(dbInstance);
   }
   return dbInstance;
 }
@@ -23,10 +23,10 @@ function ensureDirectory(dir: string) {
   }
 }
 
-function initializeSchema(db: duckdb.Database) {
-  const conn = db.connect();
+async function initializeSchema(db: DuckDBInstance) {
+  const conn = await db.connect();
   try {
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.users} (
         id VARCHAR PRIMARY KEY,
         email VARCHAR UNIQUE NOT NULL,
@@ -35,7 +35,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.sessions} (
         id VARCHAR PRIMARY KEY,
         user_id VARCHAR NOT NULL,
@@ -46,7 +46,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.userKeys} (
         id VARCHAR PRIMARY KEY,
         user_id VARCHAR NOT NULL,
@@ -58,7 +58,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.readings} (
         id VARCHAR PRIMARY KEY,
         user_id VARCHAR NOT NULL,
@@ -79,7 +79,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.feedback} (
         reading_id VARCHAR NOT NULL,
         user_id VARCHAR NOT NULL,
@@ -91,7 +91,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.prompts} (
         id VARCHAR PRIMARY KEY,
         status VARCHAR NOT NULL,
@@ -101,7 +101,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.evaluations} (
         id VARCHAR PRIMARY KEY,
         prompt_version_id VARCHAR NOT NULL,
@@ -113,7 +113,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.pushSubscriptions} (
         user_id VARCHAR NOT NULL,
         endpoint VARCHAR PRIMARY KEY,
@@ -123,7 +123,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS training_datasets (
         dataset VARCHAR NOT NULL,
         payload JSON NOT NULL,
@@ -131,7 +131,7 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
 
-    conn.run(`
+    await conn.run(`
       CREATE TABLE IF NOT EXISTS ${duckDbTables.alerts} (
         id VARCHAR PRIMARY KEY,
         kind VARCHAR NOT NULL,
@@ -140,34 +140,60 @@ function initializeSchema(db: duckdb.Database) {
       );
     `);
   } finally {
-    conn.close();
+    conn.closeSync();
   }
 }
 
 export interface QueryOptions {
-  params?: unknown[];
+  params?: DuckDBValue[];
 }
 
-export function query<T = unknown>(sql: string, options: QueryOptions = {}): Promise<T[]> {
-  return new Promise((resolve, reject) => {
-    getDb().all(sql, options.params ?? [], (err, rows) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(rows as T[]);
-      }
-    });
-  });
+export async function query<T = unknown>(sql: string, options: QueryOptions = {}): Promise<T[]> {
+  const db = await getDb();
+  const conn = await db.connect();
+  try {
+    // Convert parameters to proper DuckDB types to avoid ANY type errors
+    const params = options.params?.map(param => {
+      if (param === null || param === undefined) return null;
+      if (typeof param === 'string') return param;
+      if (typeof param === 'number') return param;
+      if (typeof param === 'boolean') return param;
+      if (param instanceof Date) return param.toISOString();
+      // Convert objects to JSON strings to avoid ANY type
+      if (typeof param === 'object') return JSON.stringify(param);
+      return String(param);
+    }) || [];
+    
+    const reader = await conn.runAndReadAll(sql, params);
+    return reader.getRowsJson() as T[];
+  } finally {
+    conn.closeSync();
+  }
 }
 
-export function run(sql: string, options: QueryOptions = {}): Promise<void> {
-  return new Promise((resolve, reject) => {
-    getDb().run(sql, options.params ?? [], (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
+export async function run(sql: string, options: QueryOptions = {}): Promise<void> {
+  const db = await getDb();
+  const conn = await db.connect();
+  try {
+    // Convert parameters to proper DuckDB types to avoid ANY type errors
+    const params = options.params?.map(param => {
+      if (param === null || param === undefined) return null;
+      if (typeof param === 'string') return param;
+      if (typeof param === 'number') return param;
+      if (typeof param === 'boolean') return param;
+      if (param instanceof Date) return param.toISOString();
+      // Convert objects to JSON strings to avoid ANY type
+      if (typeof param === 'object') return JSON.stringify(param);
+      return String(param);
+    }) || [];
+    
+    console.log('Running SQL:', sql);
+    console.log('With params:', params);
+    await conn.run(sql, params);
+  } catch (err) {
+    console.error('SQL Error:', err);
+    throw err;
+  } finally {
+    conn.closeSync();
+  }
 }
