@@ -43,6 +43,6 @@ export async function getFeedback(readingId: string, userId: string): Promise<Fe
     userId: rows[0].user_id,
     thumb: rows[0].thumb,
     rationale: rows[0].rationale ?? undefined,
-    createdAt: rows[0].created_at
+    createdAt: new Date(rows[0].created_at).toISOString()
   });
 }

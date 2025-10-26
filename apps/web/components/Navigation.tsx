@@ -28,17 +28,19 @@ export function Navigation(props: NavigationProps) {
   }
 
   return (
-    <nav className="relative isolate overflow-hidden rounded-b-[56px] border border-lapis-900/60 bg-gradient-lapis px-4 py-6 shadow-halo">
+    <nav className="relative z-20 bg-gradient-to-b from-lapis-900/80 to-transparent px-4 py-6 scrollwork-top">
+      <div className="scrollwork-corner scrollwork-corner-left"></div>
+      <div className="scrollwork-corner scrollwork-corner-right"></div>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center">
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[0.65rem] uppercase tracking-[0.35em] text-incense-300 md:justify-start">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[0.65rem] uppercase tracking-[0.35em] text-incense-300 md:justify-start acanthus-border">
           <Link href="/history" className="transition hover:text-gilded-300">
             History
           </Link>
-          <span className="text-lapis-200/40">-</span>
+          <span className="text-lapis-200/40">❦</span>
           <Link href="/settings" className="transition hover:text-gilded-300">
             Settings
           </Link>
-          <span className="text-lapis-200/40">-</span>
+          <span className="text-lapis-200/40">❦</span>
           <Link href="/legal" className="transition hover:text-gilded-300">
             Legal
           </Link>
@@ -46,9 +48,11 @@ export function Navigation(props: NavigationProps) {
 
         <Link
           href="/"
-          className="relative flex items-center justify-center font-display text-xl uppercase tracking-[0.35em] text-gilded-300 drop-shadow-[0_0_28px_rgba(230,199,92,0.35)] md:text-2xl"
+          className="relative flex items-center justify-center font-display text-xl uppercase tracking-[0.35em] text-gilded-300 drop-shadow-[0_0_28px_rgba(230,199,92,0.35)] md:text-2xl transition hover:text-gilded-200"
         >
+          <span className="text-gilded-400/60 mr-2">❦</span>
           Tarot Daily
+          <span className="text-gilded-400/60 ml-2">❦</span>
         </Link>
 
         <div className="flex items-center justify-center gap-3 md:justify-end">
@@ -56,7 +60,6 @@ export function Navigation(props: NavigationProps) {
           <AuthState user={props.user} onLogout={handleLogout} pending={pending} />
         </div>
       </div>
-      <div className="pointer-events-none absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-gilded-400/40 to-transparent" />
     </nav>
   );
 }

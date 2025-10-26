@@ -42,20 +42,23 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
 
   return (
     <form
-      className="relative overflow-hidden rounded-[32px] border border-lapis-900/40 bg-ash-900/70 p-6 text-incense-200 shadow-halo space-y-5 md:p-8"
+      className="relative overflow-hidden rounded-[32px] border border-gilded-400/35 bg-parchment-50/95 p-8 text-ash-950 shadow-halo vellum space-y-6 acanthus-border"
       onSubmit={handleSubmit}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_-20%,rgba(106,31,27,0.35),transparent_60%)] opacity-90" />
-      <div className="relative space-y-3">
-        <header className="space-y-2">
-          <span className="text-[0.65rem] uppercase tracking-[0.35em] text-cardinal-300">Feedback</span>
-          <h3 className="font-display text-2xl tracking-[0.06em] text-gilded-200">How did this land?</h3>
-          <p className="text-sm leading-relaxed text-incense-200/85">
-            A binary signal, plus nuance if you have it, keeps the optimizer honest without diluting the ritual.
+      <div className="ornate-corner ornate-corner-tl"></div>
+      <div className="ornate-corner ornate-corner-tr"></div>
+      <div className="ornate-corner ornate-corner-bl"></div>
+      <div className="ornate-corner ornate-corner-br"></div>
+      <div className="relative space-y-4">
+        <header className="text-center space-y-3">
+          <span className="text-[0.65rem] uppercase tracking-[0.35em] text-cardinal-600">Hold this lightly</span>
+          <h3 className="font-display text-3xl tracking-[0.06em] text-lapis-800">How did this resonate?</h3>
+          <p className="font-serif text-base leading-relaxed text-ash-900/70 max-w-md mx-auto">
+            Your signal helps tomorrow's refinement speak with clearer voice.
           </p>
         </header>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex justify-center gap-4">
           <FeedbackChoice
             active={thumb === 1}
             disabled={pending}
@@ -74,9 +77,9 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
 
         {thumb !== null ? (
           <label className="block space-y-2 text-sm">
-            <span className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-200/80">Optional context</span>
+            <span className="text-[0.65rem] uppercase tracking-[0.35em] text-lapis-600/80">Optional context</span>
             <textarea
-              className="w-full rounded-3xl border border-lapis-700/40 bg-ash-950/80 p-4 text-sm text-parchment-50 shadow-inner focus:border-gilded-400/60 focus:outline-none focus:ring-0"
+              className="w-full rounded-2xl border border-lapis-700/30 bg-parchment-100/60 p-4 text-sm text-ash-900 shadow-inner focus:border-gilded-400/60 focus:outline-none focus:ring-0 placeholder:text-ash-900/40"
               rows={3}
               value={rationale}
               onChange={(event) => setRationale(event.currentTarget.value.slice(0, 1000))}
@@ -86,11 +89,11 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
           </label>
         ) : null}
 
-        <div className="flex items-center justify-between pt-2">
-          {error ? <p className="text-sm text-rose-300">{error}</p> : <span />}
+        <div className="flex items-center justify-between pt-4">
+          {error ? <p className="text-sm text-cardinal-600">{error}</p> : <span />}
           <button
             type="submit"
-            className="rounded-full border border-gilded-400/40 bg-gilded-400/80 px-6 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-ash-900 transition hover:bg-gilded-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-gilded-400/60 bg-gilded-400 px-8 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.35em] text-ash-900 transition-all hover:bg-gilded-300 hover:shadow-halo disabled:cursor-not-allowed disabled:opacity-60"
             disabled={pending || thumb === null || !props.readingId}
           >
             {pending ? "Saving..." : "Submit feedback"}
@@ -111,17 +114,17 @@ function FeedbackChoice(props: {
   const palette =
     props.tone === "positive"
       ? props.active
-        ? "border-emerald-400/70 bg-emerald-500/20 text-emerald-200"
-        : "border-lapis-700/50 text-incense-200 hover:border-emerald-400/50 hover:text-emerald-200"
+        ? "border-gilded-400/70 bg-gilded-400/30 text-lapis-800 shadow-halo"
+        : "border-lapis-700/50 text-ash-900/70 hover:border-gilded-400/50 hover:text-lapis-800"
       : props.active
-        ? "border-rose-400/70 bg-rose-500/20 text-rose-200"
-        : "border-lapis-700/50 text-incense-200 hover:border-rose-400/50 hover:text-rose-200";
+        ? "border-cardinal-400/70 bg-cardinal-400/20 text-cardinal-800"
+        : "border-lapis-700/50 text-ash-900/70 hover:border-cardinal-400/50 hover:text-cardinal-800";
 
   return (
     <button
       type="button"
       className={[
-        "rounded-full border px-6 py-2 text-[0.65rem] uppercase tracking-[0.35em] transition",
+        "rounded-full border px-8 py-3 text-[0.7rem] font-semibold uppercase tracking-[0.35em] transition-all",
         palette
       ].join(" ")}
       onClick={props.onClick}

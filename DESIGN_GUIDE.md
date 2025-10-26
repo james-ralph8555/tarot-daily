@@ -1,6 +1,5 @@
 # Tarot Daily — Sacred Aesthetic UI System
 
-NOTE: SOLIDJS IS GONE !!! WE USE NEXT.JS NOW 
 *A practical, production-ready visual language for a daily Tarot experience inspired by Catholic mysticism, Gnostic cosmology, and Hermetic symbolism — without kitsch or appropriation.*
 
 ---
@@ -127,9 +126,6 @@ export default <Partial<Config>>{
 
 **App shell**:
 
-* Top bar: centered title logotype; subtle gilded rule; background `bg-gradient-lapis`.
-* Side drawer on mobile with soft **incense** panel.
-
 **Today’s Draw** (triptych):
 
 * Central card at 1.0 scale, sides at 0.9 scale; soft perspective.
@@ -167,117 +163,6 @@ export default <Partial<Config>>{
 * Build an **SVG sprite** with: suits (♠︎/♣︎/♥︎/♦︎ → Swords/Wands/Cups/Pentacles), planetary symbols, base alchemical glyphs, pilcrow, paragraph ornament, corner filigree.
 * Stroke width 1.25–1.5; use `currentColor` to inherit.
 * Decorative only; keep action icons standard (chevrons, close, settings) to avoid confusion.
-
----
-
-## 8) Component Recipes (SolidJS + Tailwind)
-
-### Tarot Card
-
-```tsx
-// components/TarotCard.tsx
-import { createSignal, JSX } from 'solid-js'
-
-export function TarotCard(props: { front: JSX.Element; back: JSX.Element; reversed?: boolean }){
-  const [flipped, setFlipped] = createSignal(false)
-  return (
-    <button
-      aria-label="Reveal card"
-      onClick={() => setFlipped(!flipped())}
-      class="relative h-64 w-40 [perspective:1200px] group focus:outline-none focus:ring-2 focus:ring-gilded-300 rounded-xl"
-    >
-      <div class="absolute inset-0 rounded-xl shadow-halo bg-ash-950/70 border border-gilded-400/40 overflow-hidden">
-        {/* filigree corners */}
-        <svg class="absolute inset-0 opacity-20 pointer-events-none" viewBox="0 0 100 160" preserveAspectRatio="none">
-          <rect x="2" y="2" width="96" height="156" rx="8" ry="8" fill="none" stroke="url(#g)"/>
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#E6C75C"/>
-              <stop offset="100%" stop-color="#8C6A2E"/>
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <div
-        class="absolute inset-0 rounded-xl transition-transform duration-700 [transform-style:preserve-3d]"
-        classList={{ '[transform:rotateY(180deg)]': flipped() }}
-      >
-        <div class="absolute inset-0 backface-hidden grid place-items-center bg-gradient-cardinal rounded-xl">
-          {props.back}
-        </div>
-        <div class="absolute inset-0 backface-hidden grid place-items-center bg-ash-950/90 rounded-xl [transform:rotateY(180deg)]"
-             classList={{ 'rotate-180': props.reversed }}>
-          {props.front}
-        </div>
-      </div>
-    </button>
-  )
-}
-```
-
-### Reading Panel
-
-```tsx
-// components/ReadingPanel.tsx
-export function ReadingPanel(props: { children: any; title?: string }){
-  return (
-    <section class="relative rounded-2xl border border-gilded-400/30 bg-parchment-50 text-ash-950 shadow-halo">
-      <div class="absolute inset-0 opacity-[.04] mix-blend-multiply" style="mask-image:url('/textures/vellum-noise.svg'); mask-size: 600px;"/>
-      {props.title && (
-        <header class="px-5 pt-5 flex items-center gap-3 text-lapis-50 bg-gradient-lapis rounded-t-2xl">
-          <h2 class="font-display tracking-tight text-xl text-gilded-300 drop-shadow">{props.title}</h2>
-          <span class="text-gilded-400 text-sm">¶</span>
-        </header>
-      )}
-      <div class="p-6 prose prose-amber max-w-none reading">
-        {props.children}
-      </div>
-    </section>
-  )
-}
-```
-
-### Feedback Widget (binary + tags + rationale)
-
-```tsx
-// components/Feedback.tsx
-import { createSignal } from 'solid-js'
-
-const TAGS = ['too vague','insightful','too long','eerily specific','uplifting','confusing']
-
-export function Feedback(props: { onSubmit: (p:{thumb:1|-1; tags:string[]; rationale?:string})=>void }){
-  const [thumb, setThumb] = createSignal<1|-1|0>(0)
-  const [tags, setTags] = createSignal<string[]>([])
-  const [text, setText] = createSignal('')
-  function toggle(tag:string){
-    setTags(prev => prev.includes(tag) ? prev.filter(t=>t!==tag) : [...prev, tag])
-  }
-  return (
-    <div class="mt-6 rounded-xl border border-gilded-400/30 bg-ash-950/40 text-parchment-50 p-4">
-      <p class="text-sm text-incense-300 mb-3">How did this reading land for you?</p>
-      <div class="flex gap-3">
-        <button class="px-3 py-2 rounded-lg border hover:shadow-halo"
-          classList={{'bg-lapis-700 border-gilded-400/50': thumb()===1, 'border-incense-300/30': thumb()!==1}}
-          onClick={()=>setThumb(1)} aria-pressed={thumb()===1}>👍 Blessed</button>
-        <button class="px-3 py-2 rounded-lg border hover:shadow-halo"
-          classList={{'bg-cardinal-700 border-gilded-400/50': thumb()===-1, 'border-incense-300/30': thumb()!==-1}}
-          onClick={()=>setThumb(-1)} aria-pressed={thumb()===-1}>👎 Needs clarity</button>
-      </div>
-      <div class="mt-3 flex flex-wrap gap-2">
-        {TAGS.map(t=> (
-          <button onClick={()=>toggle(t)} class="text-xs px-2 py-1 rounded-full border"
-            classList={{'bg-gilded-400 text-ash-950 border-gilded-400': tags().includes(t), 'border-incense-300/30 text-incense-300': !tags().includes(t)}}>{t}</button>
-        ))}
-      </div>
-      <textarea value={text()} onInput={e=>setText(e.currentTarget.value)} placeholder="Optional—why?" class="mt-3 w-full rounded-lg bg-ash-950/60 border border-incense-300/30 p-3 text-sm"/>
-      <div class="mt-3 flex justify-end">
-        <button disabled={!thumb()} onClick={()=>props.onSubmit({thumb: (thumb()||-1) as 1|-1, tags: tags(), rationale:text()||undefined})}
-          class="px-4 py-2 rounded-lg bg-gilded-400 text-ash-950 font-semibold shadow-halo disabled:opacity-40">Submit</button>
-      </div>
-    </div>
-  )
-}
-```
 
 ---
 
@@ -372,11 +257,4 @@ export function Feedback(props: { onSubmit: (p:{thumb:1|-1; tags:string[]; ratio
 
 * SVG sprite (glyphs, filigree, ouroboros divider)
 * `tailwind.config.ts` (above)
-* Components: `TarotCard.tsx`, `ReadingPanel.tsx`, `Feedback.tsx`
 * Textures: `vellum-noise.svg`, `stained-glass.svg`
-
-*Drop these into your SolidStart project and the site will immediately take on the “Serene revelation” skin without touching app logic.*
-
-
-NOTE: SOLIDJS IS GONE !!! WE USE NEXT.JS NOW 
-IMPLEMETN WITH COMPLETE REIMAGING OF EXISTING UI
