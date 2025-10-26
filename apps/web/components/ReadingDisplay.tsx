@@ -86,18 +86,13 @@ function CardSpread(props: { reading: Reading; streaming?: Record<string, string
       {/* Sacred glow behind cards */}
       <div className="pointer-events-none absolute inset-x-0 -top-20 h-80 rounded-full border border-gilded-400/25 bg-gradient-to-b from-gilded-400/20 via-transparent to-transparent opacity-70 blur-3xl" />
       
-      <div className="relative flex justify-center items-center gap-4 md:gap-8">
+      <div className="relative flex justify-center items-start gap-4 md:gap-8">
         {props.reading.cardBreakdowns.map((item, index) => {
           const card = props.reading.cards.find((entry) => entry.cardId === item.cardId);
           const title = formatCardTitle(card);
           const summary = props.streaming?.[`card:${item.cardId}`] ?? item.summary;
 
-          const elevation =
-            index === 1
-              ? "-translate-y-4 scale-110 z-10"
-              : index === 0
-                ? "-rotate-[3deg] translate-y-2"
-                : "rotate-[3deg] translate-y-2";
+          const elevation = "";
 
           return (
             <div
@@ -105,7 +100,7 @@ function CardSpread(props: { reading: Reading; streaming?: Record<string, string
               className={`relative transition-all duration-700 ${elevation}`}
             >
               {/* Tarot Card SVG */}
-              <div className="relative w-48 h-72 md:w-56 md:h-80">
+              <div className="relative w-52 h-96 md:w-60 md:h-96">
                 <TarotCardSVG 
                   title={title}
                   position={formatPosition(card?.position)}
@@ -124,19 +119,14 @@ function CardSpread(props: { reading: Reading; streaming?: Record<string, string
 function CardPlaceholder(props: { streaming?: Record<string, string> }) {
   return (
     <div className="text-center">
-      <div className="flex justify-center items-center gap-4 md:gap-8">
+      <div className="flex justify-center items-start gap-4 md:gap-8">
         {Array.from({ length: 3 }).map((_, index) => {
-          const elevation =
-            index === 1
-              ? "-translate-y-4 scale-110 z-10"
-              : index === 0
-                ? "-rotate-[3deg] translate-y-2"
-                : "rotate-[3deg] translate-y-2";
+          const elevation = "";
 
           return (
             <div
               key={index}
-              className={`relative w-48 h-72 md:w-56 md:h-80 ${elevation} opacity-100 transition-opacity duration-300`}
+              className={`relative w-52 h-96 md:w-60 md:h-96 ${elevation} opacity-100 transition-opacity duration-300`}
               style={{ transformStyle: 'preserve-3d' }}
             >
               <TarotCardPlaceholderSVG />

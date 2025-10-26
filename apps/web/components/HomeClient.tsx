@@ -30,7 +30,7 @@ export function HomeClient(props: HomeClientProps) {
     void loadReading();
   }, [props.user?.id]);
 
-  async function loadReading() {
+  async function loadReading(retryCount = 0) {
     if (!props.user) {
       return;
     }
@@ -39,6 +39,11 @@ export function HomeClient(props: HomeClientProps) {
       setReading(existing);
     } catch (error) {
       console.error("Unable to load reading", error);
+      // If we get a 401 and haven't retried yet, wait a bit and retry once
+      if (error instanceof Error && error.message.includes("401") && retryCount === 0) {
+        console.log("Retrying reading fetch after delay...");
+        setTimeout(() => loadReading(1), 500);
+      }
     }
   }
 

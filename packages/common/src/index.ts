@@ -52,7 +52,7 @@ export const readingSchema = z.object({
   actionableReflection: z.string().min(1),
   tone: z.string().min(1),
   createdAt: z.string().datetime(),
-  model: z.enum(["groq/openai/gpt-oss-20b", "groq/openai/gpt-oss-120b"])
+  model: z.enum(["openai/gpt-oss-20b", "openai/gpt-oss-120b"])
 });
 
 export type Reading = z.infer<typeof readingSchema>;

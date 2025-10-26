@@ -21,8 +21,11 @@ export function RegisterForm() {
     setPending(true);
     try {
       await register(email, password);
-      router.replace("/");
-      router.refresh();
+      // Small delay to ensure cookies are processed
+      setTimeout(() => {
+        router.replace("/");
+        router.refresh();
+      }, 100);
     } catch (err) {
       setError((err as Error).message || "Registration failed");
     } finally {
