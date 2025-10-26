@@ -8,7 +8,7 @@ import typer
 
 from .config import get_settings
 from .datasets import build_training_examples, persist_dataset
-from .duckdb_store import DuckDBStore
+from .postgres_store import PostgresStore
 from .evaluate.metrics import evaluate_dataset
 from .models import EvaluationRun, MetricResult, TrainingExample
 from .optimizers.mipro import run_mipro
@@ -27,7 +27,7 @@ app.add_typer(eval_app, name="eval")
 def build_dataset(name: str = typer.Argument(..., help="Dataset label"), limit: int = typer.Option(2000, help="Max rows")):
     """Build a dataset by merging readings and feedback."""
 
-    store = DuckDBStore()
+    store = PostgresStore(get_settings())
     examples = build_training_examples(store, limit=limit)
     persist_dataset(store, name, examples)
     typer.echo(f"Persisted {len(examples)} examples to dataset '{name}'.")
@@ -40,7 +40,7 @@ def optimize_mipro(
 ):
     """Run MIPROv2 optimizer using stored dataset."""
 
-    store = DuckDBStore()
+    store = PostgresStore(get_settings())
     examples = _load_dataset_examples(store, dataset)
     if not examples:
         raise typer.BadParameter(f"Dataset '{dataset}' not found")
@@ -54,7 +54,7 @@ def optimize_mipro(
 def evaluate_dataset_cmd(dataset: str):
     """Evaluate aggregate metrics on a dataset."""
 
-    store = DuckDBStore()
+    store = PostgresStore(get_settings())
     examples = _load_dataset_examples(store, dataset)
     if not examples:
         raise typer.BadParameter(f"Dataset '{dataset}' not found")
@@ -68,7 +68,7 @@ def nightly(limit: int = typer.Option(2000, help="Max rows for dataset build")):
 
     timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
     dataset_name = f"nightly_{timestamp}"
-    store = DuckDBStore()
+    store = PostgresStore(get_settings())
     examples = build_training_examples(store, limit=limit)
     persist_dataset(store, dataset_name, examples)
     prompt_dir = get_settings().prompt_workspace / dataset_name
@@ -90,10 +90,8 @@ def nightly(limit: int = typer.Option(2000, help="Max rows for dataset build")):
     typer.echo("Nightly workflow complete.")
 
 
-def _load_dataset_examples(store: DuckDBStore, dataset: str) -> list[TrainingExample]:
-    with store.connection() as con:
-        rows = con.execute(
-            "SELECT payload FROM training_datasets WHERE dataset = ?",
-            [dataset],
-        ).fetchall()
-    return [TrainingExample.model_validate_json(row[0]) for row in rows]
+def _load_dataset_examples(store: PostgresStore, dataset: str) -> list[TrainingExample]:
+    dataset_data = store.get_training_dataset(dataset)
+    if not dataset_data:
+        return []
+    return [TrainingExample.model_validate_json(data) if isinstance(data, str) else TrainingExample.model_validate(data) for data in dataset_data]

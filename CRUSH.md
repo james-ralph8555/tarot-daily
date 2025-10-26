@@ -2,6 +2,11 @@
 
 ## Commands
 
+### Database Setup
+- **Start PostgreSQL**: `docker-compose up -d postgres`
+- **Stop PostgreSQL**: `docker-compose down`
+- **Reset Database**: `docker-compose down -v && docker-compose up -d postgres`
+
 ### Web App (apps/web/)
 - **Build**: `npm run build`
 - **Dev**: `npm run dev` 

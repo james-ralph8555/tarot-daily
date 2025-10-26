@@ -1,5 +1,56 @@
 import type { Reading } from "@daily-tarot/common";
 import { getTarotCardById } from "@daily-tarot/common";
+import { useEffect, useRef, useState } from "react";
+
+// Custom hook for 3D card tilt effect
+function useCard3DTilt() {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({});
+
+  useEffect(() => {
+    const card = cardRef.current;
+    if (!card) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = card.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      const mouseX = e.clientX - centerX;
+      const mouseY = e.clientY - centerY;
+      
+      const rotateX = (mouseY / rect.height) * -15;
+      const rotateY = (mouseX / rect.width) * 15;
+      
+      const percentX = (e.clientX - rect.left) / rect.width * 100;
+      const percentY = (e.clientY - rect.top) / rect.height * 100;
+
+      setStyle({
+        transform: `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(20px)`,
+        '--mouse-x': `${percentX}%`,
+        '--mouse-y': `${percentY}%`,
+      } as React.CSSProperties);
+    };
+
+    const handleMouseLeave = () => {
+      setStyle({
+        transform: 'perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px)',
+        '--mouse-x': '50%',
+        '--mouse-y': '50%',
+      } as React.CSSProperties);
+    };
+
+    card.addEventListener('mousemove', handleMouseMove);
+    card.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      card.removeEventListener('mousemove', handleMouseMove);
+      card.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
+
+  return { cardRef, style };
+}
 
 interface ReadingDisplayProps {
   reading?: Reading;
@@ -97,7 +148,7 @@ function CardSpread(props: { reading: Reading; streaming?: Record<string, string
           return (
             <div
               key={item.cardId}
-              className={`relative transition-all duration-700 ${elevation}`}
+              className={`relative transition-all duration-700 card-3d-container ${elevation}`}
             >
               {/* Tarot Card SVG */}
               <div className="relative w-52 h-96 md:w-60 md:h-96">
@@ -126,8 +177,7 @@ function CardPlaceholder(props: { streaming?: Record<string, string> }) {
           return (
             <div
               key={index}
-              className={`relative w-52 h-96 md:w-60 md:h-96 ${elevation} opacity-100 transition-opacity duration-300`}
-              style={{ transformStyle: 'preserve-3d' }}
+              className={`relative w-52 h-96 md:w-60 md:h-96 card-3d-container ${elevation} opacity-100 transition-opacity duration-300`}
             >
               <TarotCardPlaceholderSVG />
             </div>
@@ -144,10 +194,18 @@ function TarotCardSVG({ title, position, orientation, summary }: {
   orientation: string;
   summary: string;
 }) {
+  const { cardRef, style } = useCard3DTilt();
   const patternId = "cardPattern";
   
   return (
-    <div className="relative w-full h-full rounded-lg border-2 border-gilded-400/60 bg-parchment-50 shadow-halo overflow-hidden">
+    <div 
+      ref={cardRef}
+      className="card-3d relative w-full h-full rounded-lg border-2 border-gilded-400/60 bg-parchment-50 shadow-halo overflow-hidden"
+      style={style}
+    >
+      {/* 3D Glow Effect */}
+      <div className="card-3d-glow" />
+      
       {/* Card back pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="w-full h-full" style={{
@@ -217,10 +275,18 @@ function TarotCardSVG({ title, position, orientation, summary }: {
 }
 
 function TarotCardPlaceholderSVG() {
+  const { cardRef, style } = useCard3DTilt();
   const patternId = "placeholderPattern";
   
   return (
-    <div className="relative w-full h-full rounded-lg border-2 border-gilded-400/30 bg-parchment-100/50 shadow-lg overflow-hidden">
+    <div 
+      ref={cardRef}
+      className="card-3d relative w-full h-full rounded-lg border-2 border-gilded-400/30 bg-parchment-100/50 shadow-lg overflow-hidden"
+      style={style}
+    >
+      {/* 3D Glow Effect */}
+      <div className="card-3d-glow" />
+      
       {/* Placeholder pattern */}
       <div className="absolute inset-0 opacity-20">
         <div className="w-full h-full" style={{

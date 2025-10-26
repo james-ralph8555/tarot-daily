@@ -1,201 +1,190 @@
-import { DuckDBInstance, DuckDBValue } from "@duckdb/node-api";
-import fs from "node:fs";
-import path from "node:path";
-import { duckDbTables } from "@daily-tarot/common";
+import { Pool, PoolClient } from 'pg';
+import path from 'path';
+import { z } from 'zod';
 
-const DEFAULT_DB_PATH = path.resolve(process.cwd(), "var/data/tarot.duckdb");
+interface QueryOptions {
+  params?: unknown[];
+}
 
-let dbInstance: DuckDBInstance | null = null;
+// Connection pool configuration
+const poolConfig = {
+  host: process.env.POSTGRES_HOST || 'localhost',
+  port: parseInt(process.env.POSTGRES_PORT || '5432'),
+  user: process.env.POSTGRES_USER || 'tarot',
+  password: process.env.POSTGRES_PASSWORD || 'tarot123',
+  database: process.env.POSTGRES_DB || 'daily_tarot',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+};
 
-export async function getDb(): Promise<DuckDBInstance> {
-  if (!dbInstance) {
-    const dbPath = process.env.DUCKDB_PATH ? path.resolve(process.cwd(), process.env.DUCKDB_PATH) : DEFAULT_DB_PATH;
-    ensureDirectory(path.dirname(dbPath));
-    dbInstance = await DuckDBInstance.create(dbPath);
-    await initializeSchema(dbInstance);
+let pool: Pool;
+
+export async function getDb(): Promise<Pool> {
+  if (!pool) {
+    pool = new Pool(poolConfig);
+    
+    // Test the connection
+    const client = await pool.connect();
+    try {
+      await client.query('SELECT NOW()');
+      await initializeSchema(client);
+    } finally {
+      client.release();
+    }
   }
-  return dbInstance;
+  return pool;
 }
 
-function ensureDirectory(dir: string) {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
-
-async function initializeSchema(db: DuckDBInstance) {
-  const conn = await db.connect();
-  try {
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.users} (
-        id VARCHAR PRIMARY KEY,
-        email VARCHAR UNIQUE NOT NULL,
-        hashed_password VARCHAR NOT NULL,
-        created_at TIMESTAMP NOT NULL
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.sessions} (
-        id VARCHAR PRIMARY KEY,
-        user_id VARCHAR NOT NULL,
-        csrf_token VARCHAR NOT NULL,
-        expires_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES ${duckDbTables.users}(id)
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.userKeys} (
-        id VARCHAR PRIMARY KEY,
-        user_id VARCHAR NOT NULL,
-        hashed_password VARCHAR,
-        provider_id VARCHAR NOT NULL,
-        provider_user_id VARCHAR NOT NULL,
-        created_at TIMESTAMP NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES ${duckDbTables.users}(id)
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.readings} (
-        id VARCHAR PRIMARY KEY,
-        user_id VARCHAR NOT NULL,
-        iso_date VARCHAR NOT NULL,
-        spread_type VARCHAR NOT NULL,
-        hmac VARCHAR NOT NULL,
-        intent VARCHAR,
-        cards JSON NOT NULL,
-        prompt_version VARCHAR NOT NULL,
-        overview TEXT NOT NULL,
-        card_breakdowns JSON NOT NULL,
-        synthesis TEXT NOT NULL,
-        actionable_reflection TEXT NOT NULL,
-        tone VARCHAR NOT NULL,
-        model VARCHAR NOT NULL,
-        created_at TIMESTAMP NOT NULL
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.feedback} (
-        reading_id VARCHAR NOT NULL,
-        user_id VARCHAR NOT NULL,
-        thumb INTEGER NOT NULL,
-        rationale TEXT,
-        created_at TIMESTAMP NOT NULL,
-        PRIMARY KEY (reading_id, user_id),
-        FOREIGN KEY (reading_id) REFERENCES ${duckDbTables.readings}(id)
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.prompts} (
-        id VARCHAR PRIMARY KEY,
-        status VARCHAR NOT NULL,
-        optimizer VARCHAR NOT NULL,
-        metadata JSON,
-        version VARCHAR DEFAULT 1,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMP NOT NULL
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.evaluations} (
-        id VARCHAR PRIMARY KEY,
-        prompt_version_id VARCHAR NOT NULL,
-        dataset VARCHAR NOT NULL,
-        metrics JSON NOT NULL,
-        guardrail_violations JSON,
-        sample_size INTEGER DEFAULT 0,
-        created_at TIMESTAMP NOT NULL,
-        FOREIGN KEY (prompt_version_id) REFERENCES ${duckDbTables.prompts}(id)
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.pushSubscriptions} (
-        user_id VARCHAR NOT NULL,
-        endpoint VARCHAR PRIMARY KEY,
-        expiration_time BIGINT,
-        keys JSON NOT NULL,
-        created_at TIMESTAMP NOT NULL
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS training_datasets (
-        dataset VARCHAR NOT NULL,
-        payload JSON NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-
-    await conn.run(`
-      CREATE TABLE IF NOT EXISTS ${duckDbTables.alerts} (
-        id VARCHAR PRIMARY KEY,
-        kind VARCHAR NOT NULL,
-        payload JSON NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } finally {
-    conn.closeSync();
-  }
-}
-
-export interface QueryOptions {
-  params?: DuckDBValue[];
-}
-
+// Helper function to execute queries with proper typing
 export async function query<T = unknown>(sql: string, options: QueryOptions = {}): Promise<T[]> {
   const db = await getDb();
-  const conn = await db.connect();
+  const client = await db.connect();
   try {
-    // Convert parameters to proper DuckDB types to avoid ANY type errors
-    const params = options.params?.map(param => {
-      if (param === null || param === undefined) return null;
-      if (typeof param === 'string') return param;
-      if (typeof param === 'number') return param;
-      if (typeof param === 'boolean') return param;
-      if (param instanceof Date) return param.toISOString();
-      // Convert objects to JSON strings to avoid ANY type
-      if (typeof param === 'object') return JSON.stringify(param);
-      return String(param);
-    }) || [];
-    
-    const reader = await conn.runAndReadAll(sql, params);
-    return reader.getRowObjectsJson() as T[];
+    const result = await client.query(sql, options.params || []);
+    return result.rows;
   } finally {
-    conn.closeSync();
+    client.release();
   }
 }
 
+// Helper function to execute write operations
 export async function run(sql: string, options: QueryOptions = {}): Promise<void> {
   const db = await getDb();
-  const conn = await db.connect();
+  const client = await db.connect();
   try {
-    // Convert parameters to proper DuckDB types to avoid ANY type errors
-    const params = options.params?.map(param => {
-      if (param === null || param === undefined) return null;
-      if (typeof param === 'string') return param;
-      if (typeof param === 'number') return param;
-      if (typeof param === 'boolean') return param;
-      if (param instanceof Date) return param.toISOString();
-      // Convert objects to JSON strings to avoid ANY type
-      if (typeof param === 'object') return JSON.stringify(param);
-      return String(param);
-    }) || [];
-    
-    console.log('Running SQL:', sql);
-    console.log('With params:', params);
-    await conn.run(sql, params);
-  } catch (err) {
-    console.error('SQL Error:', err);
-    throw err;
+    await client.query(sql, options.params || []);
   } finally {
-    conn.closeSync();
+    client.release();
   }
 }
+
+// Initialize database schema
+async function initializeSchema(client: PoolClient): Promise<void> {
+  // User management tables
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      email TEXT NOT NULL UNIQUE,
+      hashed_password TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      csrf_token TEXT NOT NULL,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS user_keys (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL,
+      provider_user_id TEXT NOT NULL,
+      hashed_secret TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(provider, provider_user_id)
+    )
+  `);
+
+  // Tarot reading tables
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS readings (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      iso_date TEXT NOT NULL,
+      spread_type TEXT NOT NULL,
+      hmac TEXT NOT NULL UNIQUE,
+      intent TEXT NOT NULL,
+      cards JSONB NOT NULL,
+      prompt_version INTEGER,
+      overview TEXT NOT NULL,
+      card_breakdowns JSONB NOT NULL,
+      synthesis TEXT NOT NULL,
+      actionable_reflection TEXT NOT NULL,
+      tone TEXT,
+      model TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS feedback (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      reading_id UUID NOT NULL REFERENCES readings(id) ON DELETE CASCADE,
+      user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+      rating INTEGER CHECK (rating >= 1 AND rating <= 5),
+      category TEXT,
+      comment TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // ML optimization tables
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS prompt_versions (
+      id INTEGER PRIMARY KEY,
+      prompt TEXT NOT NULL,
+      active BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS evaluation_runs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      prompt_version INTEGER NOT NULL REFERENCES prompt_versions(id),
+      dataset_name TEXT NOT NULL,
+      metrics JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS training_datasets (
+      name TEXT PRIMARY KEY,
+      data JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // Push notification table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL,
+      keys JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(endpoint)
+    )
+  `);
+
+  // Alert system table
+  await client.query(`
+    CREATE TABLE IF NOT EXISTS alerts (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      metadata JSONB,
+      acknowledged BOOLEAN NOT NULL DEFAULT false,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // Create indexes for better performance
+  await client.query('CREATE INDEX IF NOT EXISTS idx_readings_user_id ON readings(user_id)');
+  await client.query('CREATE INDEX IF NOT EXISTS idx_readings_created_at ON readings(created_at DESC)');
+  await client.query('CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)');
+  await client.query('CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)');
+  await client.query('CREATE INDEX IF NOT EXISTS idx_feedback_reading_id ON feedback(reading_id)');
+}
+
+// Export types for use in other modules
+export type { PoolClient };

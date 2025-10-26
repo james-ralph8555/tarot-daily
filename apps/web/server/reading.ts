@@ -1,6 +1,6 @@
 import { cardDrawSchema, readingSchema, type Reading } from "@daily-tarot/common";
 import { z } from "zod";
-import { nanoid } from "nanoid";
+import { randomUUID } from "crypto";
 import { deriveSeed, generateSpread, type SpreadType } from "../lib/seed";
 import { createChatCompletion, type ChatMessage } from "./groq";
 import { getEnv } from "./config";
@@ -78,7 +78,7 @@ async function findReading(userId: string, isoDate: string): Promise<Reading | n
     `
     SELECT *
     FROM readings
-    WHERE user_id = ? AND iso_date = ?
+    WHERE user_id = $1 AND iso_date = $2
     ORDER BY created_at DESC
     LIMIT 1
   `,
@@ -95,10 +95,10 @@ async function findReading(userId: string, isoDate: string): Promise<Reading | n
       hmac: record.hmac
     },
     intent: record.intent ?? undefined,
-    cards: JSON.parse(record.cards),
+    cards: typeof record.cards === 'string' ? JSON.parse(record.cards) : record.cards,
     promptVersion: record.prompt_version,
     overview: record.overview,
-    cardBreakdowns: JSON.parse(record.card_breakdowns),
+    cardBreakdowns: typeof record.card_breakdowns === 'string' ? JSON.parse(record.card_breakdowns) : record.card_breakdowns,
     synthesis: record.synthesis,
     actionableReflection: record.actionable_reflection,
     tone: record.tone,
@@ -115,10 +115,10 @@ export async function listReadings(options: ReadingHistoryOptions): Promise<Read
     `
       SELECT *
       FROM readings
-      WHERE user_id = ?
-        ${cursorCreatedAt ? "AND created_at < ?" : ""}
+      WHERE user_id = $1
+        ${cursorCreatedAt ? "AND created_at < $2" : ""}
       ORDER BY created_at DESC
-      LIMIT ?
+      LIMIT ${cursorCreatedAt ? "$3" : "$2"}
     `,
     {
       params: cursorCreatedAt ? [options.userId, cursorCreatedAt.toISOString(), limit + 1] : [options.userId, limit + 1]
@@ -135,10 +135,10 @@ export async function listReadings(options: ReadingHistoryOptions): Promise<Read
         hmac: record.hmac
       },
       intent: record.intent ?? undefined,
-      cards: JSON.parse(record.cards),
+      cards: typeof record.cards === 'string' ? JSON.parse(record.cards) : record.cards,
       promptVersion: record.prompt_version,
       overview: record.overview,
-      cardBreakdowns: JSON.parse(record.card_breakdowns),
+      cardBreakdowns: typeof record.card_breakdowns === 'string' ? JSON.parse(record.card_breakdowns) : record.card_breakdowns,
       synthesis: record.synthesis,
       actionableReflection: record.actionable_reflection,
       tone: record.tone,
@@ -224,7 +224,7 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
   }
 
   const record: Reading = {
-    id: nanoid(),
+    id: randomUUID(),
     seed: {
       userId: input.userId,
       isoDate: input.isoDate,
@@ -269,7 +269,7 @@ async function persistReading(reading: Reading) {
       model,
       created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
   `,
     {
       params: [

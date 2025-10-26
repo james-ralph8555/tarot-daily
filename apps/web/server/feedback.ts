@@ -21,9 +21,9 @@ export async function upsertFeedback(input: UpsertFeedbackInput) {
   await run(
     `
     INSERT INTO feedback (reading_id, user_id, thumb, rationale, created_at)
-    VALUES (?, ?, ?, ?, ?)
+    VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT (reading_id, user_id)
-    DO UPDATE SET thumb = excluded.thumb, rationale = excluded.rationale, created_at = ?
+    DO UPDATE SET thumb = excluded.thumb, rationale = excluded.rationale, created_at = $6
   `,
     {
       params: [input.readingId, input.userId, input.thumb, input.rationale ?? null, now, now]
@@ -34,7 +34,7 @@ export async function upsertFeedback(input: UpsertFeedbackInput) {
 
 export async function getFeedback(readingId: string, userId: string): Promise<Feedback | null> {
   const rows = await query<FeedbackRecord>(
-    `SELECT reading_id, user_id, thumb, rationale, created_at FROM feedback WHERE reading_id = ? AND user_id = ?`,
+    `SELECT reading_id, user_id, thumb, rationale, created_at FROM feedback WHERE reading_id = $1 AND user_id = $2`,
     { params: [readingId, userId] }
   );
   if (!rows.length) return null;

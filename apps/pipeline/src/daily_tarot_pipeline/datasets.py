@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .duckdb_store import DuckDBStore
+from .postgres_store import PostgresStore
 from .models import FeedbackRecord, ReadingRecord, TrainingExample
 
 
 def build_training_examples(
-    store: DuckDBStore,
+    store: PostgresStore,
     limit: int = 2000,
     include_negative: bool = True,
 ) -> list[TrainingExample]:
@@ -29,7 +29,7 @@ def build_training_examples(
     return examples
 
 
-def persist_dataset(store: DuckDBStore, dataset_name: str, examples: Iterable[TrainingExample]) -> None:
+def persist_dataset(store: PostgresStore, dataset_name: str, examples: Iterable[TrainingExample]) -> None:
     store.append_training_examples(dataset_name, examples)
 
 

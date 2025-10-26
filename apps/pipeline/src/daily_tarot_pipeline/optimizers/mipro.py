@@ -46,7 +46,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
 
     import uuid
     from datetime import datetime
-    from ..duckdb_store import DuckDBStore
+    from ..postgres_store import PostgresStore
 
     settings = get_settings()
     lm = dspy.LM(
@@ -83,7 +83,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     prompt_version_id = str(uuid.uuid4())
     
     # Insert the prompt version into the database
-    store = DuckDBStore()
+    store = PostgresStore(get_settings())
     store.insert_prompt_version(
         prompt_version_id, 
         optimizer="MIPROv2", 

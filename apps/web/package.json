@@ -13,11 +13,10 @@
   },
   "dependencies": {
     "@daily-tarot/common": "file:../../packages/common",
-    "@duckdb/node-api": "^1.3.2-alpha.26",
+    "pg": "^8.11.5",
     "cookie": "^0.6.0",
     "cross-fetch": "^4.0.0",
     "dotenv": "^16.4.5",
-    "duckdb": "^1.3.2",
     "lucia": "^3.0.1",
     "nanoid": "^5.0.7",
     "next": "15.1.6",
@@ -28,6 +27,7 @@
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",
+    "@types/pg": "^8.10.9",
     "@types/node": "^22.13.14",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",

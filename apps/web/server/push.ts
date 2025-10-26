@@ -15,7 +15,7 @@ export async function storePushSubscription(userId: string, payload: unknown) {
   await run(
     `
       INSERT INTO push_subscriptions (user_id, endpoint, expiration_time, keys, created_at)
-      VALUES (?, ?, ?, ?, ?)
+      VALUES ($1, $2, $3, $4, $5)
       ON CONFLICT (endpoint)
       DO UPDATE SET user_id = excluded.user_id, expiration_time = excluded.expiration_time, keys = excluded.keys
     `,
@@ -28,7 +28,7 @@ export async function storePushSubscription(userId: string, payload: unknown) {
 
 export async function getUserSubscriptions(userId: string): Promise<PushSubscription[]> {
   const rows = await query<PushRecord>(
-    `SELECT user_id, endpoint, expiration_time, keys, created_at FROM push_subscriptions WHERE user_id = ?`,
+    `SELECT user_id, endpoint, expiration_time, keys, created_at FROM push_subscriptions WHERE user_id = $1`,
     { params: [userId] }
   );
   return rows.map((row) =>

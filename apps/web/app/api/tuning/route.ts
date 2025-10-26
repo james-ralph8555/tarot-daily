@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
 
     if (status) {
-      whereClause = 'WHERE pv.status = ?';
+      whereClause = 'WHERE CASE WHEN pv.active THEN \'candidate\' ELSE \'draft\' END = $1';
       params.push(status);
     }
 
@@ -23,20 +23,20 @@ export async function GET(request: NextRequest) {
     const promptVersions = await query<any>(`
       SELECT 
         pv.id,
-        pv.id as version,
-        pv.status,
-        pv.optimizer as optimizer_config,
+        pv.prompt as version,
+        CASE WHEN pv.active THEN 'candidate' ELSE 'draft' END as status,
+        null as optimizer_config,
         pv.created_at,
         null as updated_at,
         COUNT(er.id) as evaluation_count,
-        AVG(CAST(JSON_EXTRACT(er.metrics, '$.overall_score') AS FLOAT)) as avg_score,
+        AVG((er.metrics->>'overall_score')::FLOAT) as avg_score,
         MAX(er.created_at) as last_evaluation
       FROM ${duckDbTables.prompts} pv
-      LEFT JOIN ${duckDbTables.evaluations} er ON pv.id = er.prompt_version_id
+      LEFT JOIN ${duckDbTables.evaluations} er ON pv.id = er.prompt_version
       ${whereClause}
-      GROUP BY pv.id, pv.status, pv.optimizer, pv.created_at
+      GROUP BY pv.id, pv.prompt, pv.active, pv.created_at
       ORDER BY pv.created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `, { params: [...params, limit, offset] });
 
     // Get total count for pagination
@@ -52,11 +52,11 @@ export async function GET(request: NextRequest) {
           SELECT 
             id,
             metrics,
-            guardrail_violations,
+            null as guardrail_violations,
             0 as sample_size,
             created_at
           FROM ${duckDbTables.evaluations}
-          WHERE prompt_version_id = ?
+          WHERE prompt_version = $1
           ORDER BY created_at DESC
         `, { params: [version.id] });
 

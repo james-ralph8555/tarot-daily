@@ -18,7 +18,11 @@ class EnvironmentSettings(BaseSettings):
     groq_prod_model: Literal["groq/openai/gpt-oss-20b", "groq/openai/gpt-oss-120b"] = Field(
         "groq/openai/gpt-oss-120b", env="GROQ_PROD_MODEL"
     )
-    duckdb_path: Path = Field(Path("var/data/tarot.duckdb"), env="DUCKDB_PATH")
+    postgres_host: str = Field("localhost", env="POSTGRES_HOST")
+    postgres_port: int = Field(5432, env="POSTGRES_PORT")
+    postgres_user: str = Field("tarot", env="POSTGRES_USER")
+    postgres_password: str = Field("tarot123", env="POSTGRES_PASSWORD")
+    postgres_database: str = Field("daily_tarot", env="POSTGRES_DB")
     prompt_workspace: Path = Field(Path("var/prompts"), env="PROMPT_WORKSPACE")
     dataset_workspace: Path = Field(Path("var/datasets"), env="DATASET_WORKSPACE")
 
@@ -38,7 +42,6 @@ def get_settings() -> EnvironmentSettings:
     settings = EnvironmentSettings()
     settings.prompt_workspace.mkdir(parents=True, exist_ok=True)
     settings.dataset_workspace.mkdir(parents=True, exist_ok=True)
-    settings.duckdb_path.parent.mkdir(parents=True, exist_ok=True)
     return settings
 
 

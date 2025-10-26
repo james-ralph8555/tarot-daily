@@ -318,11 +318,52 @@ button {
   }
 }
 
+/* 3D Card Tilt Effect */
+.card-3d-container {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+.card-3d:hover {
+  transform: translateZ(20px);
+}
+
+.card-3d-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(230, 199, 92, 0.15), 
+                transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card-3d:hover .card-3d-glow {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reading-text,
   .reading-text *,
   .reading-content {
     animation: none !important;
     transition: none !important;
+  }
+  
+  .card-3d {
+    transform: none !important;
+    transition: none !important;
+  }
+  
+  .card-3d-glow {
+    display: none;
   }
 }

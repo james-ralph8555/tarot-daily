@@ -14,8 +14,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    console.log("Creating user...");
     const userId = await createEmailPasswordUser(email, password);
+    console.log("User created successfully:", userId);
+    
+    console.log("Creating session...");
     const sessionBundle = await createSession(userId);
+    console.log("Session created successfully");
 
     const headers = new Headers();
     headers.append("Set-Cookie", sessionBundle.cookie);
@@ -31,6 +36,7 @@ export async function POST(request: Request) {
       { headers }
     );
   } catch (error) {
+    console.error("Registration error:", error);
     return json({ error: (error as Error).message }, { status: 400 });
   }
 }

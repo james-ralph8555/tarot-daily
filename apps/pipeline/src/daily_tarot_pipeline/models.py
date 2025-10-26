@@ -77,6 +77,13 @@ class EvaluationRun(BaseModel):
     created_at: datetime
 
 
+class PromptVersion(BaseModel):
+    id: int
+    prompt: str
+    active: bool
+    created_at: datetime
+
+
 class PromptCandidate(BaseModel):
     prompt_path: str
     optimizer: str
