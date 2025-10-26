@@ -18,4 +18,4 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app ./
 EXPOSE 3000
-CMD ["npm", "run", "start", "--workspace", "@daily-tarot/web", "--", "--port", "3000", "--host", "0.0.0.0"]
+CMD ["npm", "run", "start", "--workspace", "@daily-tarot/web", "--", "--hostname", "0.0.0.0", "--port", "3000"]
