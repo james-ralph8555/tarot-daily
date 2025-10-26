@@ -83,10 +83,10 @@ export function HomeClient(props: HomeClientProps) {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-6 px-4 pb-16 pt-8">
+    <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-4 pb-24 pt-12 lg:px-8">
       <Navigation user={props.user} />
-      <section className="grid items-start gap-6 lg:grid-cols-[2fr,1fr]">
-        <div>
+      <section className="grid items-start gap-10 lg:grid-cols-[1.35fr,0.9fr]">
+        <div className="space-y-8">
           <ReadingDisplay reading={reading} streaming={streaming} />
           <FeedbackWidget readingId={reading?.id} existing={feedback} onSubmitted={setFeedback} />
         </div>
@@ -101,18 +101,24 @@ export function HomeClient(props: HomeClientProps) {
 
 function Callouts(props: { isStreaming: boolean }) {
   return (
-    <div className="card space-y-4 text-sm text-slate-200/80">
-      <p>
-        Your daily draw uses deterministic seeding, so you can revisit the same reading later and reproduce the exact
-        spread.
-      </p>
-      <p>
-        Feedback you share feeds the nightly DSPy optimizer. Prompts stay in staging until evaluation metrics improve or
-        hold steady.
-      </p>
-      <p className="text-xs uppercase tracking-wide text-amber-200">
-        {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS · Pipeline: DSPy + DuckDB"}
-      </p>
+    <div className="relative overflow-hidden rounded-[32px] border border-lapis-900/40 bg-ash-900/70 p-6 text-sm text-incense-200 shadow-halo">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_-20%,rgba(230,199,92,0.16),transparent_55%)] opacity-90" />
+      <div className="relative space-y-4">
+        <header className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-300">
+          Daily Ritual
+        </header>
+        <p className="leading-relaxed">
+          Deterministic seeding means today&apos;s draw can be retrieved and studied again--ritual belongs to the rhythm,
+          not randomness.
+        </p>
+        <p className="leading-relaxed">
+          Your signal trains the nocturnal DSPy optimizer. Prompt updates deploy only when evaluation metrics stay true
+          or ascend.
+        </p>
+        <p className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-200/80">
+          {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS | Pipeline: DSPy <-> DuckDB"}
+        </p>
+      </div>
     </div>
   );
 }

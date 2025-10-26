@@ -10,7 +10,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-sm flex-col justify-center px-4 py-16">
+    <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-4 pb-24 pt-20">
       <LoginForm />
     </main>
   );

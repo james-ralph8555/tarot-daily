@@ -4,9 +4,8 @@
 
 :root {
   color-scheme: dark;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: #0E0F12;
+  color: #F3E9DC;
 }
 
 * {
@@ -16,7 +15,26 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at top, #1e1b4b, #0f172a 60%);
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #0E0F12;
+  background-image:
+    radial-gradient(1200px 600px at 50% -10%, #131D33 0%, rgba(19, 29, 51, 0.78) 45%, rgba(14, 15, 18, 0.9) 70%),
+    linear-gradient(135deg, rgba(106, 31, 27, 0.35), rgba(14, 15, 18, 0.92));
+  color: #F3E9DC;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  z-index: -1;
 }
 
 a {
@@ -32,9 +50,50 @@ button {
 }
 
 .card {
-  backdrop-filter: blur(18px);
-  background: linear-gradient(145deg, rgba(67, 56, 202, 0.8), rgba(17, 24, 39, 0.9));
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  border-radius: 1rem;
-  padding: 1.5rem;
+  position: relative;
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  background: linear-gradient(145deg, rgba(27, 42, 74, 0.82), rgba(14, 15, 18, 0.92));
+  border: 1px solid rgba(230, 199, 92, 0.12);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 28px 60px rgba(11, 18, 33, 0.55);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  background: radial-gradient(circle at top, rgba(230, 199, 92, 0.08), transparent 55%);
+  opacity: 0.8;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  z-index: -1;
+}
+
+.vellum {
+  position: relative;
+  isolation: isolate;
+}
+
+.vellum::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Cdefs%3E%3CradialGradient id='g' cx='50%25' cy='35%25' r='85%25'%3E%3Cstop offset='0%25' stop-color='rgba(230,199,92,0.12)'/%3E%3Cstop offset='65%25' stop-color='rgba(195,164,102,0.06)'/%3E%3Cstop offset='100%25' stop-color='rgba(227,215,186,0.0)'/%3E%3C/radialGradient%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3C/defs%3E%3Crect width='320' height='200' fill='url(%23g)'/%3E%3Crect width='320' height='200' filter='url(%23f)' opacity='.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.reading-body p:first-of-type::first-letter {
+  font-family: var(--font-serif), serif;
+  font-size: 3.2em;
+  line-height: 0.8;
+  float: left;
+  padding-right: 0.08em;
+  color: #E6C75C;
+  text-shadow: 0 0 12px rgba(230, 199, 92, 0.25);
 }

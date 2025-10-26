@@ -28,23 +28,35 @@ export function Navigation(props: NavigationProps) {
   }
 
   return (
-    <nav className="flex items-center justify-between rounded-b-xl border border-indigo-500/40 bg-indigo-950/60 px-6 py-4 shadow-lg backdrop-blur">
-      <Link href="/" className="text-lg font-semibold uppercase tracking-wide text-amber-100">
-        Tarot Daily
-      </Link>
-      <div className="flex items-center gap-4 text-sm text-slate-200/80">
-        <Link href="/history" className="hover:text-amber-200">
-          History
+    <nav className="relative isolate overflow-hidden rounded-b-[56px] border border-lapis-900/60 bg-gradient-lapis px-4 py-6 shadow-halo">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[0.65rem] uppercase tracking-[0.35em] text-incense-300 md:justify-start">
+          <Link href="/history" className="transition hover:text-gilded-300">
+            History
+          </Link>
+          <span className="text-lapis-200/40">-</span>
+          <Link href="/settings" className="transition hover:text-gilded-300">
+            Settings
+          </Link>
+          <span className="text-lapis-200/40">-</span>
+          <Link href="/legal" className="transition hover:text-gilded-300">
+            Legal
+          </Link>
+        </div>
+
+        <Link
+          href="/"
+          className="relative flex items-center justify-center font-display text-xl uppercase tracking-[0.35em] text-gilded-300 drop-shadow-[0_0_28px_rgba(230,199,92,0.35)] md:text-2xl"
+        >
+          Tarot Daily
         </Link>
-        <Link href="/settings" className="hover:text-amber-200">
-          Settings
-        </Link>
-        <Link href="/legal" className="hover:text-amber-200">
-          Legal
-        </Link>
-        <AuthState user={props.user} onLogout={handleLogout} pending={pending} />
+
+        <div className="flex items-center justify-center gap-3 md:justify-end">
+          {props.actions ?? null}
+          <AuthState user={props.user} onLogout={handleLogout} pending={pending} />
+        </div>
       </div>
-      {props.actions ?? null}
+      <div className="pointer-events-none absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-gilded-400/40 to-transparent" />
     </nav>
   );
 }
@@ -54,7 +66,7 @@ function AuthState(props: { user: { id: string; email: string } | null; onLogout
     return (
       <Link
         href="/login"
-        className="rounded bg-amber-500/30 px-3 py-1 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/50"
+        className="rounded-full border border-gilded-400/40 bg-gilded-400/20 px-5 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-gilded-200 transition hover:bg-gilded-400/30"
       >
         Log in
       </Link>
@@ -62,17 +74,17 @@ function AuthState(props: { user: { id: string; email: string } | null; onLogout
   }
 
   return (
-    <span className="flex items-center gap-3">
-      <span className="rounded-full border border-amber-200/40 px-3 py-[6px] text-xs uppercase tracking-wide text-amber-100">
+    <span className="flex items-center gap-3 text-xs uppercase tracking-[0.28em] text-incense-200">
+      <span className="rounded-full border border-gilded-400/40 bg-lapis-900/60 px-4 py-2 text-[0.6rem] font-medium">
         {props.user.email}
       </span>
       <button
-        className="rounded bg-rose-500/20 px-3 py-1 text-xs font-medium text-rose-200 transition hover:bg-rose-500/30 disabled:opacity-50"
+        className="rounded-full border border-cardinal-400/40 bg-cardinal-700/50 px-4 py-2 text-[0.6rem] font-medium uppercase tracking-[0.35em] text-parchment-50 transition hover:border-cardinal-300/60 hover:bg-cardinal-700/60 disabled:opacity-50"
         type="button"
         onClick={props.onLogout}
         disabled={props.pending}
       >
-        {props.pending ? "Logging out…" : "Log out"}
+        {props.pending ? "Logging out..." : "Log out"}
       </button>
     </span>
   );

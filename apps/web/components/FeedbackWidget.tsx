@@ -41,65 +41,93 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
   }
 
   return (
-    <form className="card mt-6 space-y-4" onSubmit={handleSubmit}>
-      <header>
-        <h3 className="text-lg font-semibold text-amber-100">How did this land?</h3>
-        <p className="mt-1 text-sm text-slate-200/80">
-          Binary signal plus optional context helps the optimizer focus on what matters.
-        </p>
-      </header>
+    <form
+      className="relative overflow-hidden rounded-[32px] border border-lapis-900/40 bg-ash-900/70 p-6 text-incense-200 shadow-halo space-y-5 md:p-8"
+      onSubmit={handleSubmit}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_-20%,rgba(106,31,27,0.35),transparent_60%)] opacity-90" />
+      <div className="relative space-y-3">
+        <header className="space-y-2">
+          <span className="text-[0.65rem] uppercase tracking-[0.35em] text-cardinal-300">Feedback</span>
+          <h3 className="font-display text-2xl tracking-[0.06em] text-gilded-200">How did this land?</h3>
+          <p className="text-sm leading-relaxed text-incense-200/85">
+            A binary signal, plus nuance if you have it, keeps the optimizer honest without diluting the ritual.
+          </p>
+        </header>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          className={`rounded-full border px-4 py-2 text-sm transition ${
-            thumb === 1
-              ? "border-emerald-400 bg-emerald-500/20 text-emerald-200"
-              : "border-slate-500/50 text-slate-200/80 hover:border-emerald-400/60"
-          }`}
-          onClick={() => setThumb(1)}
-          disabled={pending}
-        >
-          👍 Resonated
-        </button>
-        <button
-          type="button"
-          className={`rounded-full border px-4 py-2 text-sm transition ${
-            thumb === -1
-              ? "border-rose-400 bg-rose-500/20 text-rose-200"
-              : "border-slate-500/50 text-slate-200/80 hover:border-rose-400/60"
-          }`}
-          onClick={() => setThumb(-1)}
-          disabled={pending}
-        >
-          👎 Missed
-        </button>
-      </div>
-
-      {thumb !== null ? (
-        <label className="block">
-          <span className="text-xs uppercase tracking-wide text-slate-400/80">Optional context</span>
-          <textarea
-            className="mt-2 w-full rounded-md border border-slate-500/50 bg-slate-900/40 p-3 text-sm text-slate-100 shadow-inner focus:border-indigo-400 focus:outline-none"
-            rows={3}
-            value={rationale}
-            onChange={(event) => setRationale(event.currentTarget.value.slice(0, 1000))}
-            placeholder="Share nuance or what to improve next time."
+        <div className="flex flex-wrap gap-3">
+          <FeedbackChoice
+            active={thumb === 1}
             disabled={pending}
+            label="Resonated"
+            tone="positive"
+            onClick={() => setThumb(1)}
           />
-        </label>
-      ) : null}
+          <FeedbackChoice
+            active={thumb === -1}
+            disabled={pending}
+            label="Missed"
+            tone="negative"
+            onClick={() => setThumb(-1)}
+          />
+        </div>
 
-      <div className="flex items-center justify-between">
-        {error ? <p className="text-sm text-rose-300">{error}</p> : <span />}
-        <button
-          type="submit"
-          className="rounded bg-indigo-500/80 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-400/80 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={pending || thumb === null || !props.readingId}
-        >
-          {pending ? "Saving..." : "Submit feedback"}
-        </button>
+        {thumb !== null ? (
+          <label className="block space-y-2 text-sm">
+            <span className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-200/80">Optional context</span>
+            <textarea
+              className="w-full rounded-3xl border border-lapis-700/40 bg-ash-950/80 p-4 text-sm text-parchment-50 shadow-inner focus:border-gilded-400/60 focus:outline-none focus:ring-0"
+              rows={3}
+              value={rationale}
+              onChange={(event) => setRationale(event.currentTarget.value.slice(0, 1000))}
+              placeholder="Share nuance or guidance for tomorrow's refinement."
+              disabled={pending}
+            />
+          </label>
+        ) : null}
+
+        <div className="flex items-center justify-between pt-2">
+          {error ? <p className="text-sm text-rose-300">{error}</p> : <span />}
+          <button
+            type="submit"
+            className="rounded-full border border-gilded-400/40 bg-gilded-400/80 px-6 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-ash-900 transition hover:bg-gilded-400 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={pending || thumb === null || !props.readingId}
+          >
+            {pending ? "Saving..." : "Submit feedback"}
+          </button>
+        </div>
       </div>
     </form>
+  );
+}
+
+function FeedbackChoice(props: {
+  active: boolean;
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+  tone: "positive" | "negative";
+}) {
+  const palette =
+    props.tone === "positive"
+      ? props.active
+        ? "border-emerald-400/70 bg-emerald-500/20 text-emerald-200"
+        : "border-lapis-700/50 text-incense-200 hover:border-emerald-400/50 hover:text-emerald-200"
+      : props.active
+        ? "border-rose-400/70 bg-rose-500/20 text-rose-200"
+        : "border-lapis-700/50 text-incense-200 hover:border-rose-400/50 hover:text-rose-200";
+
+  return (
+    <button
+      type="button"
+      className={[
+        "rounded-full border px-6 py-2 text-[0.65rem] uppercase tracking-[0.35em] transition",
+        palette
+      ].join(" ")}
+      onClick={props.onClick}
+      disabled={props.disabled}
+    >
+      {props.label}
+    </button>
   );
 }
