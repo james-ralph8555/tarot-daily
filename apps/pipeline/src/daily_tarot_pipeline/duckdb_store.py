@@ -108,23 +108,31 @@ class DuckDBStore:
                 [(dataset_name, example) for example in data],
             )
 
-    def insert_prompt_version(self, prompt_version: str, optimizer: str, status: str = "candidate") -> None:
+    def insert_prompt_version(self, prompt_version: str, optimizer: str, status: str = "candidate", metadata: dict = None) -> None:
+        import uuid
+        if metadata is None:
+            metadata = {}
+            
         with self.connection() as con:
             con.execute(
                 """
-                INSERT INTO prompt_versions (id, status, optimizer, metadata, created_at)
-                VALUES (?, ?, ?, '{}', CURRENT_TIMESTAMP)
-                ON CONFLICT (id) DO UPDATE SET status = EXCLUDED.status, optimizer = EXCLUDED.optimizer
+                INSERT INTO prompt_versions (id, status, optimizer, metadata, version, created_at)
+                VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT (id) DO UPDATE SET 
+                    status = EXCLUDED.status, 
+                    optimizer = EXCLUDED.optimizer,
+                    metadata = EXCLUDED.metadata,
+                    updated_at = CURRENT_TIMESTAMP
                 """,
-                [prompt_version, status, optimizer],
+                [prompt_version, status, optimizer, json.dumps(metadata), prompt_version],
             )
 
     def record_evaluation(self, evaluation: EvaluationRun) -> None:
         with self.connection() as con:
             con.execute(
                 """
-                INSERT INTO evaluation_runs (id, prompt_version_id, dataset, metrics, guardrail_violations, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO evaluation_runs (id, prompt_version_id, dataset, metrics, guardrail_violations, sample_size, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 [
                     evaluation.id,
@@ -132,6 +140,7 @@ class DuckDBStore:
                     evaluation.dataset,
                     json.dumps([metric.model_dump() for metric in evaluation.metrics]),
                     json.dumps(evaluation.guardrail_violations),
+                    len(evaluation.metrics) if evaluation.metrics else 0,
                     evaluation.created_at,
                 ],
             )

@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { logout } from "../lib/api-client";
 
 interface NavigationProps {
-  user: { id: string; email: string } | null;
+  user?: { id: string; email: string } | null;
   actions?: ReactNode;
 }
 
-export function Navigation(props: NavigationProps) {
+export function Navigation(props: NavigationProps = {}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -37,6 +37,10 @@ export function Navigation(props: NavigationProps) {
             History
           </Link>
           <span className="text-lapis-200/40">❦</span>
+          <Link href="/tuning" className="transition hover:text-gilded-300">
+            Tuning
+          </Link>
+          <span className="text-lapis-200/40">❦</span>
           <Link href="/settings" className="transition hover:text-gilded-300">
             Settings
           </Link>
@@ -57,7 +61,7 @@ export function Navigation(props: NavigationProps) {
 
         <div className="flex items-center justify-center gap-3 md:justify-end">
           {props.actions ?? null}
-          <AuthState user={props.user} onLogout={handleLogout} pending={pending} />
+          <AuthState user={props.user ?? null} onLogout={handleLogout} pending={pending} />
         </div>
       </div>
     </nav>

@@ -96,6 +96,8 @@ async function initializeSchema(db: DuckDBInstance) {
         status VARCHAR NOT NULL,
         optimizer VARCHAR NOT NULL,
         metadata JSON,
+        version VARCHAR DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP NOT NULL
       );
     `);
@@ -106,7 +108,8 @@ async function initializeSchema(db: DuckDBInstance) {
         prompt_version_id VARCHAR NOT NULL,
         dataset VARCHAR NOT NULL,
         metrics JSON NOT NULL,
-        guardrail_violations JSON NOT NULL,
+        guardrail_violations JSON,
+        sample_size INTEGER DEFAULT 0,
         created_at TIMESTAMP NOT NULL,
         FOREIGN KEY (prompt_version_id) REFERENCES ${duckDbTables.prompts}(id)
       );

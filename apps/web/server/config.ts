@@ -3,7 +3,7 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   GROQ_API_KEY: z.string().min(1, "GROQ_API_KEY is required"),
-  GROQ_API_BASE: z.string().default("https://api.groq.com/openai/v1"),
+  GROQ_API_BASE: z.string().default("https://api.groq.com/openai/v1/chat/completions"),
   GROQ_DEV_MODEL: z.enum(["groq/openai/gpt-oss-20b", "groq/openai/gpt-oss-120b"]).default("groq/openai/gpt-oss-20b"),
   GROQ_PROD_MODEL: z.enum(["groq/openai/gpt-oss-20b", "groq/openai/gpt-oss-120b"]).default("groq/openai/gpt-oss-120b"),
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be 32+ characters"),
