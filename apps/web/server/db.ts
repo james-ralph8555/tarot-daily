@@ -74,8 +74,7 @@ async function initializeSchema(db: DuckDBInstance) {
         actionable_reflection TEXT NOT NULL,
         tone VARCHAR NOT NULL,
         model VARCHAR NOT NULL,
-        created_at TIMESTAMP NOT NULL,
-        UNIQUE(user_id, iso_date)
+        created_at TIMESTAMP NOT NULL
       );
     `);
 

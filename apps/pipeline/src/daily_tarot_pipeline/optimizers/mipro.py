@@ -10,8 +10,8 @@ from ..models import TrainingExample, PromptCandidate
 
 
 class TarotReadingSignature(dspy.Signature):
-    """DSPy signature describing the tarot reading task."""
-
+    """Generate personalized tarot readings with structured output."""
+    
     intent = dspy.InputField(desc="Optional user intent for today's reading.")
     spread_type = dspy.InputField(desc="Spread layout (single, three-card, celtic-cross).")
     cards = dspy.InputField(desc="Card IDs with orientation and position information.")
@@ -34,7 +34,10 @@ class TarotReadingModule(dspy.Module):
         return self.generator(intent=intent, spread_type=spread_type, cards=cards, tone=tone)
 
     def export_prompt(self, target_path: Path) -> None:
-        prompt = self.generator.prompt
+        # Export the full module state as JSON representation
+        import json
+        state = self.generator.dump_state()
+        prompt = json.dumps(state, indent=2, default=str)
         target_path.write_text(prompt, encoding="utf-8")
 
 
@@ -78,13 +81,26 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     prompt_path = output_dir / "prompt.txt"
     module.export_prompt(prompt_path)
 
-    return PromptCandidate(prompt_path=str(prompt_path), optimizer="MIPROv2", loss=result.loss)
+    return PromptCandidate(prompt_path=str(prompt_path), optimizer="MIPROv2", loss=None)
 
 
-def _metric_fn(gold: dict, pred: dict) -> float:
+def _metric_fn(gold, pred) -> float:
+    # Handle case where pred might be None or have missing fields
+    if pred is None:
+        return 0.0
+        
+    # Convert Example objects to dicts if needed
+    if hasattr(gold, 'toDict'):
+        gold = gold.toDict()
+    if hasattr(pred, 'toDict'):
+        pred = pred.toDict()
+    
     score = 0.0
-    if gold.get("overview") and pred.get("overview"):
-        score += _overlap_score(gold["overview"], pred["overview"])
+    gold_overview = gold.get("overview") if isinstance(gold, dict) else getattr(gold, "overview", None)
+    pred_overview = pred.get("overview") if isinstance(pred, dict) else getattr(pred, "overview", None)
+    
+    if gold_overview and pred_overview:
+        score += _overlap_score(gold_overview, pred_overview)
     return score
 
 

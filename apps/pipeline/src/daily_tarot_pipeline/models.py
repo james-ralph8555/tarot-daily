@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 CardOrientation = Literal["upright", "reversed"]
-ModelName = Literal["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+ModelName = Literal["groq/openai/gpt-oss-20b", "groq/openai/gpt-oss-120b"]
 SpreadType = Literal["single", "three-card", "celtic-cross"]
 
 

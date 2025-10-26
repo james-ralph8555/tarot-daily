@@ -32,7 +32,7 @@ def test_build_training_examples_merges_feedback():
         synthesis="Trust the start.",
         actionable_reflection="Take one concrete step.",
         tone="warm",
-        model="openai/gpt-oss-20b",
+        model="groq/openai/gpt-oss-20b",
         created_at=datetime.utcnow(),
     )
     feedback = FeedbackRecord(

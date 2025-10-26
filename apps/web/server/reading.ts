@@ -52,17 +52,7 @@ export interface ReadingHistory {
 }
 
 export async function ensureReading(input: ReadingRequestInput): Promise<ReadingResult> {
-  if (input.force) {
-    // Delete existing reading and its feedback when forcing regeneration
-    await run(
-      "DELETE FROM feedback WHERE reading_id IN (SELECT id FROM readings WHERE user_id = ? AND iso_date = ?)",
-      { params: [input.userId, input.isoDate] }
-    );
-    await run(
-      "DELETE FROM readings WHERE user_id = ? AND iso_date = ?",
-      { params: [input.userId, input.isoDate] }
-    );
-  } else {
+  if (!input.force) {
     const existing = await findReading(input.userId, input.isoDate);
     if (existing) {
       return { reading: existing, created: false };
@@ -89,6 +79,8 @@ async function findReading(userId: string, isoDate: string): Promise<Reading | n
     SELECT *
     FROM readings
     WHERE user_id = ? AND iso_date = ?
+    ORDER BY created_at DESC
+    LIMIT 1
   `,
     { params: [userId, isoDate] }
   );

@@ -20,7 +20,11 @@ ENV PYTHONUNBUFFERED=1
 COPY --from=deps /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=deps /usr/local/bin /usr/local/bin
 
+# Install the package to make it available
+COPY apps/pipeline/pyproject.toml .
+COPY apps/pipeline/README.md .
 COPY apps/pipeline/src ./src
+RUN pip install -e .
 
 ENTRYPOINT ["tarot-pipeline"]
 CMD ["nightly"]
