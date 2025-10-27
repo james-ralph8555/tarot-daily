@@ -27,11 +27,11 @@ docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline .
 docker-compose up -d postgres
 
 # Run nightly job
-docker run --rm --network daily-tarot_default -e GROQ_API_KEY=your_key daily-tarot-pipeline nightly
+docker run --rm --network daily-tarot_default -e GROQ_API_KEY=your_key -e POSTGRES_HOST=postgres daily-tarot-pipeline nightly
 ```
 
 ### Development with Docker
 ```bash
 # Start postgres and build/run pipeline in one command
-docker-compose up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm --network daily-tarot_default -e GROQ_API_KEY=your_key daily-tarot-pipeline nightly
+docker-compose up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm --network daily-tarot_default -e GROQ_API_KEY=your_key -e POSTGRES_HOST=postgres daily-tarot-pipeline nightly
 ```

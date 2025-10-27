@@ -13,7 +13,7 @@ from .evaluate.metrics import evaluate_dataset
 from .models import EvaluationRun, MetricResult, TrainingExample
 from .optimizers.mipro import run_mipro
 
-app = typer.Typer(help="Tarot Daily offline pipeline")
+app = typer.Typer(help="Tarot Daily offline pipeline", pretty_exceptions_enable=False)
 
 dataset_app = typer.Typer(help="Dataset operations")
 optimizer_app = typer.Typer(help="Prompt optimization")

@@ -20,8 +20,7 @@ export interface ChatCompletionResult {
 export async function createChatCompletion(
   messages: ChatMessage[], 
   modelOverride?: string,
-  userId?: string,
-  readingId?: string
+  userId?: string
 ): Promise<ChatCompletionResult> {
   const env = getEnv();
   const model = modelOverride ?? (env.NODE_ENV === "production" ? env.GROQ_PROD_MODEL : env.GROQ_DEV_MODEL);
@@ -74,54 +73,8 @@ export async function createChatCompletion(
     latencyMs
   } : undefined;
   
-  // Store usage data if we have the metrics
-  if (usage && (userId || readingId)) {
-    await storeGroqUsage({
-      userId: userId || null,
-      readingId: readingId || null,
-      model: data.model,
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      latencyMs,
-      requestTimestamp: new Date(startTime).toISOString(),
-      responseTimestamp: new Date(endTime).toISOString()
-    });
-  }
+  // No longer storing usage here - it's moved to reading.ts
+  // to ensure reading exists before usage tracking
   
   return { content, raw: data, usage };
-}
-
-interface GroqUsageRecord {
-  userId?: string | null;
-  readingId?: string | null;
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-  latencyMs: number;
-  requestTimestamp: string;
-  responseTimestamp: string;
-}
-
-async function storeGroqUsage(record: GroqUsageRecord) {
-  await run(
-    `INSERT INTO groq_usage (
-      user_id, reading_id, model, prompt_tokens, completion_tokens, 
-      total_tokens, latency_ms, request_timestamp, response_timestamp
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    {
-      params: [
-        record.userId,
-        record.readingId,
-        record.model,
-        record.promptTokens,
-        record.completionTokens,
-        record.totalTokens,
-        record.latencyMs,
-        record.requestTimestamp,
-        record.responseTimestamp
-      ]
-    }
-  );
 }

@@ -7,6 +7,40 @@ import { getEnv } from "./config";
 import { query, run } from "./db";
 import { normalizeTimestamp } from "./time";
 
+interface GroqUsageRecord {
+  userId: string | null;
+  readingId: string | null;
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+  latencyMs: number;
+  requestTimestamp: string;
+  responseTimestamp: string;
+}
+
+async function storeGroqUsage(record: GroqUsageRecord) {
+  await run(
+    `INSERT INTO groq_usage (
+      user_id, reading_id, model, prompt_tokens, completion_tokens, 
+      total_tokens, latency_ms, request_timestamp, response_timestamp
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    {
+      params: [
+        record.userId,
+        record.readingId,
+        record.model,
+        record.promptTokens,
+        record.completionTokens,
+        record.totalTokens,
+        record.latencyMs,
+        record.requestTimestamp,
+        record.responseTimestamp
+      ]
+    }
+  );
+}
+
 type ReadingRecord = {
   id: string;
   user_id: string;
@@ -204,7 +238,7 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
     { role: "user", content: JSON.stringify(userPrompt) }
   ];
 
-  const completion = await createChatCompletion(messages, undefined, input.userId, readingId);
+  const completion = await createChatCompletion(messages, undefined, input.userId);
   const aiResponse = JSON.parse(completion.content);
   
   // Validate the AI response structure
@@ -249,6 +283,22 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
   };
 
   await persistReading(record);
+  
+  // Store usage data after reading is successfully persisted
+  if (completion.usage) {
+    await storeGroqUsage({
+      userId: input.userId,
+      readingId: record.id,
+      model: record.model,
+      promptTokens: completion.usage.promptTokens,
+      completionTokens: completion.usage.completionTokens,
+      totalTokens: completion.usage.totalTokens,
+      latencyMs: completion.usage.latencyMs,
+      requestTimestamp: new Date().toISOString(),
+      responseTimestamp: new Date().toISOString()
+    });
+  }
+  
   return record;
 }
 
