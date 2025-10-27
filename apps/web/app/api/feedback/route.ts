@@ -1,6 +1,8 @@
 import { json } from "../../../lib/json";
 import { readCsrfToken, validateCsrf, validateRequest } from "../../../server/auth";
 import { getFeedback, upsertFeedback } from "../../../server/feedback";
+import { storeTelemetryEvents } from "../../../server/telemetry";
+import { telemetryEventSchema } from "../../../lib/telemetry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,13 +39,31 @@ export async function POST(request: Request) {
   }
 
   const rationale = typeof payload?.rationale === "string" ? payload.rationale.slice(0, 1000) : undefined;
+  const tags = Array.isArray(payload?.tags) ? payload.tags.slice(0, 5) : undefined;
 
   const feedback = await upsertFeedback({
     readingId,
     userId: auth.user.id,
     thumb,
-    rationale
+    rationale,
+    tags
   });
+
+  // Track telemetry events
+  try {
+    const telemetryEvents = payload?.telemetry;
+    if (Array.isArray(telemetryEvents)) {
+      const validEvents = telemetryEvents
+        .map(event => telemetryEventSchema.parse({ ...event, userId: auth.user!.id }))
+        .filter(event => ['feedback_submitted', 'thumb_up', 'thumb_down'].includes(event.type));
+      
+      if (validEvents.length > 0) {
+        await storeTelemetryEvents(validEvents);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to store telemetry events:', error);
+  }
 
   return json({ feedback });
 }

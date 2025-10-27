@@ -3,6 +3,8 @@ import { json } from "../../../lib/json";
 import { ensureReading } from "../../../server/reading";
 import type { SpreadType } from "../../../lib/seed";
 import { readCsrfToken, validateCsrf, validateRequest } from "../../../server/auth";
+import { storeTelemetryEvents } from "../../../server/telemetry";
+import { telemetryEventSchema } from "../../../lib/telemetry";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +61,22 @@ export async function POST(request: Request) {
     tone,
     force
   });
+
+  // Track telemetry events
+  try {
+    const telemetryEvents = payload?.telemetry;
+    if (Array.isArray(telemetryEvents)) {
+      const validEvents = telemetryEvents
+        .map(event => telemetryEventSchema.parse({ ...event, userId: auth.user!.id }))
+        .filter(event => ['reading_started', 'reading_time_to_first_token', 'reading_completed'].includes(event.type));
+      
+      if (validEvents.length > 0) {
+        await storeTelemetryEvents(validEvents);
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to store telemetry events:', error);
+  }
 
   if (payload?.stream === false) {
     return json({ reading, created });

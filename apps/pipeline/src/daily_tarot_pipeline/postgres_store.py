@@ -10,18 +10,18 @@ from psycopg.rows import dict_row
 from pydantic import BaseModel, Field
 
 from .models import ReadingRecord, EvaluationRun, PromptVersion, FeedbackRecord, TrainingExample
-from .config import Settings
+from .config import EnvironmentSettings
 
 
 class PostgresStore:
-    def __init__(self, settings: Settings):
+    def __init__(self, settings: EnvironmentSettings):
         self.settings = settings
         self.connection_params = {
             'host': os.getenv('POSTGRES_HOST', 'localhost'),
             'port': os.getenv('POSTGRES_PORT', '5432'),
             'user': os.getenv('POSTGRES_USER', 'tarot'),
             'password': os.getenv('POSTGRES_PASSWORD', 'tarot123'),
-            'database': os.getenv('POSTGRES_DB', 'daily_tarot'),
+            'dbname': os.getenv('POSTGRES_DB', 'daily_tarot'),
             'row_factory': dict_row,
         }
 

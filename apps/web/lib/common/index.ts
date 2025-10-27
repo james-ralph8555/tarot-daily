@@ -62,6 +62,7 @@ export const feedbackSchema = z.object({
   userId: z.string().min(1),
   thumb: z.union([z.literal(1), z.literal(-1)]),
   rationale: z.string().max(1000).optional(),
+  tags: z.array(z.string().max(50)).max(5).default([]),
   createdAt: z.string().datetime()
 });
 

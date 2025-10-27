@@ -69,7 +69,7 @@ export async function fetchReading(isoDate?: string) {
   return (await response.json()) as Reading;
 }
 
-export async function submitFeedback(payload: { readingId: string; thumb: 1 | -1; rationale?: string }) {
+export async function submitFeedback(payload: { readingId: string; thumb: 1 | -1; rationale?: string; tags?: string[] }) {
   const response = await fetch("/api/feedback", {
     method: "POST",
     headers: {

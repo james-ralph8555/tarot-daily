@@ -164,6 +164,9 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
     throw new Error("userId is required but was not provided");
   }
   
+  // Create reading ID early for usage tracking
+  const readingId = randomUUID();
+  
   // Use timestamp-based seed when forcing regeneration to get different cards
   const seedForGeneration = input.force 
     ? deriveSeed(input.userId, input.isoDate + Date.now().toString())
@@ -201,7 +204,7 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
     { role: "user", content: JSON.stringify(userPrompt) }
   ];
 
-  const completion = await createChatCompletion(messages);
+  const completion = await createChatCompletion(messages, undefined, input.userId, readingId);
   const aiResponse = JSON.parse(completion.content);
   
   // Validate the AI response structure
@@ -224,7 +227,7 @@ async function generateReading(input: ReadingRequestInput): Promise<Reading> {
   }
 
   const record: Reading = {
-    id: randomUUID(),
+    id: readingId,
     seed: {
       userId: input.userId,
       isoDate: input.isoDate,

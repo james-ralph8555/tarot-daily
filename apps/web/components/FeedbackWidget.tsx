@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import type { Feedback } from "../lib/common";
 import { submitFeedback } from "../lib/api-client";
+import { telemetry } from "../lib/telemetry";
 
 interface FeedbackWidgetProps {
   readingId?: string;
@@ -13,13 +14,21 @@ interface FeedbackWidgetProps {
 export function FeedbackWidget(props: FeedbackWidgetProps) {
   const [thumb, setThumb] = useState<number | null>(props.existing?.thumb ?? null);
   const [rationale, setRationale] = useState(props.existing?.rationale ?? "");
+  const [tags, setTags] = useState<string[]>(props.existing?.tags ?? []);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableTags = [
+    "too generic", "on point", "too vague", "insightful", 
+    "missed the mark", "resonant", "confusing", "helpful",
+    "too spiritual", "too clinical", "just right"
+  ];
 
   useEffect(() => {
     setThumb(props.existing?.thumb ?? null);
     setRationale(props.existing?.rationale ?? "");
-  }, [props.existing?.thumb, props.existing?.rationale, props.readingId]);
+    setTags(props.existing?.tags ?? []);
+  }, [props.existing?.thumb, props.existing?.rationale, props.existing?.tags, props.readingId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -29,15 +38,28 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
       const response = await submitFeedback({
         readingId: props.readingId,
         thumb: thumb === 1 ? 1 : -1,
-        rationale: rationale.trim() || undefined
+        rationale: rationale.trim() || undefined,
+        tags: tags.length > 0 ? tags : undefined
       });
       setError(null);
+      
+      // Track telemetry
+      telemetry.trackFeedback(thumb as 1 | -1, tags);
+      
       props.onSubmitted?.(response.feedback);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setPending(false);
     }
+  }
+
+  function toggleTag(tag: string) {
+    setTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag].slice(0, 5) // Max 5 tags
+    );
   }
 
   return (
@@ -76,17 +98,34 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
         </div>
 
         {thumb !== null ? (
-          <label className="block space-y-2 text-sm">
-            <span className="text-[0.65rem] uppercase tracking-[0.35em] text-lapis-600/80">Optional context</span>
-            <textarea
-              className="w-full rounded-2xl border border-lapis-700/30 bg-parchment-100/60 p-4 text-sm text-ash-900 shadow-inner focus:border-gilded-400/60 focus:outline-none focus:ring-0 placeholder:text-ash-900/40"
-              rows={3}
-              value={rationale}
-              onChange={(event) => setRationale(event.currentTarget.value.slice(0, 1000))}
-              placeholder="Share nuance or guidance for tomorrow's refinement."
-              disabled={pending}
-            />
-          </label>
+          <div className="space-y-4">
+            <label className="block space-y-2 text-sm">
+              <span className="text-[0.65rem] uppercase tracking-[0.35em] text-lapis-600/80">Optional context</span>
+              <textarea
+                className="w-full rounded-2xl border border-lapis-700/30 bg-parchment-100/60 p-4 text-sm text-ash-900 shadow-inner focus:border-gilded-400/60 focus:outline-none focus:ring-0 placeholder:text-ash-900/40"
+                rows={3}
+                value={rationale}
+                onChange={(event) => setRationale(event.currentTarget.value.slice(0, 1000))}
+                placeholder="Share nuance or guidance for tomorrow's refinement."
+                disabled={pending}
+              />
+            </label>
+
+            <label className="block space-y-3 text-sm">
+              <span className="text-[0.65rem] uppercase tracking-[0.35em] text-lapis-600/80">Quick tags (max 5)</span>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map(tag => (
+                  <TagButton
+                    key={tag}
+                    tag={tag}
+                    selected={tags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                    disabled={pending}
+                  />
+                ))}
+              </div>
+            </label>
+          </div>
         ) : null}
 
         <div className="flex items-center justify-between pt-4">
@@ -101,6 +140,29 @@ export function FeedbackWidget(props: FeedbackWidgetProps) {
         </div>
       </div>
     </form>
+  );
+}
+
+function TagButton(props: {
+  tag: string;
+  selected: boolean;
+  onClick: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      className={[
+        "rounded-full border px-4 py-1.5 text-xs font-medium transition-all",
+        props.selected
+          ? "border-gilded-400/70 bg-gilded-400/30 text-lapis-800 shadow-halo"
+          : "border-lapis-700/30 bg-parchment-100/60 text-ash-900/70 hover:border-gilded-400/50 hover:text-lapis-800"
+      ].join(" ")}
+      onClick={props.onClick}
+      disabled={props.disabled}
+    >
+      {props.tag}
+    </button>
   );
 }
 

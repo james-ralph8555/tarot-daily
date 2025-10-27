@@ -8,6 +8,7 @@ import { FeedbackWidget } from "./FeedbackWidget";
 import { IntentForm } from "./IntentForm";
 import { Navigation } from "./Navigation";
 import { ReadingDisplay } from "./ReadingDisplay";
+import { telemetry } from "../lib/telemetry";
 
 interface HomeClientProps {
   user: { id: string; email: string } | null;
@@ -60,6 +61,11 @@ export function HomeClient(props: HomeClientProps) {
     setStreaming({});
     setIsStreaming(true);
 
+    // Track reading start
+    telemetry.startReading();
+
+    let firstTokenReceived = false;
+
     try {
       await streamReading(
         { intent, signal: controller.signal, force: true },
@@ -67,9 +73,16 @@ export function HomeClient(props: HomeClientProps) {
           if (event.type === "delta" && typeof event.data === "object" && event.data) {
             const { section, text } = event.data as { section: string; text: string };
             setStreaming((prev) => ({ ...prev, [section]: text }));
+            
+            // Track time to first token
+            if (!firstTokenReceived) {
+              telemetry.recordTimeToFirstToken();
+              firstTokenReceived = true;
+            }
           } else if (event.type === "final") {
             setReading(event.data as Reading);
             setStreaming({});
+            telemetry.completeReading();
           } else if (event.type === "error") {
             const message = typeof event.data === "object" && event.data && "message" in (event.data as any)
               ? ((event.data as { message?: string }).message ?? "Reading failed")
