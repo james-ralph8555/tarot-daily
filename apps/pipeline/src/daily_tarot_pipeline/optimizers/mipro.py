@@ -61,30 +61,26 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     optimizer = dspy.MIPROv2(metric=lambda gold, pred: _metric_fn(gold, pred), init_temperature=0.7)
 
     dataset = [
-        {
-            "input": {
-                "intent": example.intent,
-                "spread_type": example.spread_type,
-                "cards": [card.model_dump() for card in example.cards],
-                "tone": example.tone,
-            },
-            "output": {
-                "overview": example.overview,
-                "card_breakdowns": [item.model_dump() for item in example.card_breakdowns],
-                "synthesis": example.synthesis,
-                "actionable_reflection": example.actionable_reflection,
-                "disclaimer": "For reflection and entertainment; not medical or financial advice.",
-            },
-        }
+        dspy.Example(
+            intent=example.intent,
+            spread_type=example.spread_type,
+            cards=[card.model_dump() for card in example.cards],
+            tone=example.tone,
+            overview=example.overview,
+            card_breakdowns=[item.model_dump() for item in example.card_breakdowns],
+            synthesis=example.synthesis,
+            actionable_reflection=example.actionable_reflection,
+            disclaimer="For reflection and entertainment; not medical or financial advice.",
+        ).with_inputs("intent", "spread_type", "cards", "tone")
         for example in training_examples
     ]
 
     # Generate a unique ID for this prompt version
     prompt_version_id = str(uuid.uuid4())
     
-    # Insert the prompt version into the database
+    # Insert the prompt version into the database and get the actual integer ID
     store = PostgresStore(get_settings())
-    store.insert_prompt_version(
+    actual_prompt_version_id = store.insert_prompt_version(
         prompt_version_id, 
         optimizer="MIPROv2", 
         status="candidate",
@@ -111,7 +107,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     # Store the results
     evaluation = EvaluationRun(
         id=evaluation_id,
-        prompt_version_id=prompt_version_id,
+        prompt_version_id=str(actual_prompt_version_id),
         dataset=f"training_set_{len(list(training_examples))}",
         metrics=[
             MetricResult(name="overall_score", value=0.85),

@@ -7,6 +7,10 @@
 - **Stop PostgreSQL**: `docker-compose down`
 - **Reset Database**: `docker-compose down -v && docker-compose up -d postgres`
 
+### Database Query 
+
+docker exec daily-tarot-postgres psql "postgresql://tarot:tarot123@postgres:5432/daily_tarot" -c "<QUERY>" 
+
 ### Web App (apps/web/)
 - **Build**: `npm run build`
 - **Dev**: `npm run dev` 

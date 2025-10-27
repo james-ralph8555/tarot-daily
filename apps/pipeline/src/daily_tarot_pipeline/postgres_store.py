@@ -39,9 +39,15 @@ class PostgresStore:
         with self.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT id, user_id, iso_date, spread_type, hmac, intent, cards, 
+                    SELECT id::text, user_id::text, iso_date, spread_type, hmac, intent, cards, 
                            prompt_version, overview, card_breakdowns, synthesis, 
-                           actionable_reflection, tone, model, created_at
+                           actionable_reflection, tone, 
+                           CASE 
+                               WHEN model = 'openai/gpt-oss-20b' THEN 'groq/openai/gpt-oss-20b'
+                               WHEN model = 'openai/gpt-oss-120b' THEN 'groq/openai/gpt-oss-120b'
+                               ELSE model
+                           END as model,
+                           created_at
                     FROM readings
                     ORDER BY created_at DESC
                     LIMIT %s
@@ -125,7 +131,7 @@ class PostgresStore:
         with self.connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT reading_id, user_id, rating as thumb, comment as rationale, created_at
+                    SELECT reading_id::text, user_id::text, thumb, rationale, created_at
                     FROM feedback
                     ORDER BY created_at DESC
                     LIMIT %s
@@ -133,8 +139,8 @@ class PostgresStore:
                 rows = cur.fetchall()
                 return [FeedbackRecord(**row) for row in rows]
 
-    def insert_prompt_version(self, prompt_id: str, optimizer: str, status: str = "candidate", metadata: dict = None) -> None:
-        """Insert a new prompt version (converted from old system)"""
+    def insert_prompt_version(self, prompt_id: str, optimizer: str, status: str = "candidate", metadata: dict = None) -> int:
+        """Insert a new prompt version (converted from old system) and return the integer ID"""
         version_id = hash(prompt_id) % 1000000  # Generate integer ID from string
         metadata_json = json.dumps(metadata) if metadata else '{}'
         
@@ -147,6 +153,7 @@ class PostgresStore:
                         prompt = EXCLUDED.prompt,
                         active = EXCLUDED.active
                 """, [version_id, f"Optimizer: {optimizer}, Status: {status}, Metadata: {metadata_json}", False, datetime.now(timezone.utc)])
+                return version_id
 
     def record_evaluation(self, evaluation: 'EvaluationRun') -> None:
         """Record evaluation run results"""

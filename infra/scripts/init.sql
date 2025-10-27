@@ -109,3 +109,27 @@ CREATE INDEX IF NOT EXISTS idx_groq_usage_timestamp ON groq_usage(request_timest
 CREATE INDEX IF NOT EXISTS idx_groq_usage_model ON groq_usage(model);
 CREATE INDEX IF NOT EXISTS idx_groq_usage_user_id ON groq_usage(user_id);
 CREATE INDEX IF NOT EXISTS idx_groq_usage_reading_id ON groq_usage(reading_id);
+
+-- Training datasets table
+CREATE TABLE IF NOT EXISTS training_datasets (
+    name TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Prompt versions table
+CREATE TABLE IF NOT EXISTS prompt_versions (
+    id INTEGER PRIMARY KEY,
+    prompt TEXT NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Evaluation runs table
+CREATE TABLE IF NOT EXISTS evaluation_runs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    prompt_version INTEGER NOT NULL REFERENCES prompt_versions(id),
+    dataset_name TEXT NOT NULL,
+    metrics JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
