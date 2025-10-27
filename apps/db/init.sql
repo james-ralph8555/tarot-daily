@@ -1,14 +1,22 @@
--- Initialize PostgreSQL database for Daily Tarot
--- This file is automatically run when the container starts
+-- Unified PostgreSQL database initialization script for Daily Tarot
+-- This script creates all tables, types, and indexes needed for the application
+
+BEGIN;
 
 -- Enable UUID extension for generating unique IDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create user-defined type for spread types (ENUM equivalent)
-CREATE TYPE spread_type_enum AS ENUM ('single', 'three-card', 'celtic-cross');
-
--- Create user-defined type for tone preferences
-CREATE TYPE tone_enum AS ENUM ('reflective', 'direct', 'inspirational', 'cautious', 'warm-analytical');
+-- Create user-defined types
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'spread_type_enum') THEN
+        CREATE TYPE spread_type_enum AS ENUM ('single', 'three-card', 'celtic-cross');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tone_enum') THEN
+        CREATE TYPE tone_enum AS ENUM ('reflective', 'direct', 'inspirational', 'cautious', 'warm-analytical');
+    END IF;
+END $$;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
@@ -58,17 +66,6 @@ CREATE TABLE IF NOT EXISTS feedback (
     CONSTRAINT unique_reading_user_feedback UNIQUE (reading_id, user_id)
 );
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
-CREATE INDEX IF NOT EXISTS idx_readings_user_id ON readings(user_id);
-CREATE INDEX IF NOT EXISTS idx_readings_created_at ON readings(created_at);
-CREATE INDEX IF NOT EXISTS idx_readings_iso_date ON readings(iso_date);
-CREATE INDEX IF NOT EXISTS idx_readings_user_iso_date ON readings(user_id, iso_date);
-CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_reading_id ON feedback(reading_id);
-CREATE INDEX IF NOT EXISTS idx_feedback_tags ON feedback USING GIN(tags);
-
 -- Telemetry events table
 CREATE TABLE IF NOT EXISTS telemetry_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -98,18 +95,6 @@ CREATE TABLE IF NOT EXISTS groq_usage (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Additional telemetry indexes
-CREATE INDEX IF NOT EXISTS idx_telemetry_events_timestamp ON telemetry_events(timestamp);
-CREATE INDEX IF NOT EXISTS idx_telemetry_events_type ON telemetry_events(type);
-CREATE INDEX IF NOT EXISTS idx_telemetry_events_user_id ON telemetry_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_telemetry_events_session_id ON telemetry_events(session_id);
-CREATE INDEX IF NOT EXISTS idx_telemetry_events_type_timestamp ON telemetry_events(type, timestamp);
-
-CREATE INDEX IF NOT EXISTS idx_groq_usage_timestamp ON groq_usage(request_timestamp);
-CREATE INDEX IF NOT EXISTS idx_groq_usage_model ON groq_usage(model);
-CREATE INDEX IF NOT EXISTS idx_groq_usage_user_id ON groq_usage(user_id);
-CREATE INDEX IF NOT EXISTS idx_groq_usage_reading_id ON groq_usage(reading_id);
-
 -- Training datasets table
 CREATE TABLE IF NOT EXISTS training_datasets (
     name TEXT PRIMARY KEY,
@@ -133,3 +118,33 @@ CREATE TABLE IF NOT EXISTS evaluation_runs (
     metrics JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Indexes for sessions
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+
+-- Indexes for readings
+CREATE INDEX IF NOT EXISTS idx_readings_user_id ON readings(user_id);
+CREATE INDEX IF NOT EXISTS idx_readings_created_at ON readings(created_at);
+CREATE INDEX IF NOT EXISTS idx_readings_iso_date ON readings(iso_date);
+CREATE INDEX IF NOT EXISTS idx_readings_user_iso_date ON readings(user_id, iso_date);
+
+-- Indexes for feedback
+CREATE INDEX IF NOT EXISTS idx_feedback_user_id ON feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_reading_id ON feedback(reading_id);
+CREATE INDEX IF NOT EXISTS idx_feedback_tags ON feedback USING GIN(tags);
+
+-- Indexes for telemetry events
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_timestamp ON telemetry_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_type ON telemetry_events(type);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_user_id ON telemetry_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_session_id ON telemetry_events(session_id);
+CREATE INDEX IF NOT EXISTS idx_telemetry_events_type_timestamp ON telemetry_events(type, timestamp);
+
+-- Indexes for groq usage
+CREATE INDEX IF NOT EXISTS idx_groq_usage_timestamp ON groq_usage(request_timestamp);
+CREATE INDEX IF NOT EXISTS idx_groq_usage_model ON groq_usage(model);
+CREATE INDEX IF NOT EXISTS idx_groq_usage_user_id ON groq_usage(user_id);
+CREATE INDEX IF NOT EXISTS idx_groq_usage_reading_id ON groq_usage(reading_id);
+
+COMMIT;

@@ -3,13 +3,14 @@
 ## Commands
 
 ### Database Setup
-- **Start PostgreSQL**: `docker-compose up -d postgres`
-- **Stop PostgreSQL**: `docker-compose down`
-- **Reset Database**: `docker-compose down -v && docker-compose up -d postgres`
+- **Start PostgreSQL**: `docker compose -f apps/db/docker-compose.yml up -d postgres`
+- **Stop PostgreSQL**: `docker compose -f apps/db/docker-compose.yml down`
+- **Reset Database**: `docker compose -f apps/db/docker-compose.yml down -v && docker compose -f apps/db/docker-compose.yml up -d postgres`
 
 ### Database Query 
 
 docker exec daily-tarot-postgres psql "postgresql://tarot:tarot123@postgres:5432/daily_tarot" -c "<QUERY>" 
+docker exec daily-tarot-postgres psql "postgresql://tarot:tarot123@localhost:5432/daily_tarot" -c "<QUERY>" 
 
 ### Web App (apps/web/)
 - **Build**: `npm run build`

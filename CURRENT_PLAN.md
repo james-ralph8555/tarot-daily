@@ -28,12 +28,6 @@ Seed derivation: server-side HMAC; store seed with reading.
 
 Caching: If a reading exists for user/date & prompt_version, reuse unless the user requests regeneration (admin-only during experiments).
 
-## 12) Notifications & PWA
-
-Service worker: cache shell + last N readings; background fetch to refresh. MDN "offline-first" pattern.
-
-Push: store VAPID subscription; send a "time-boxed" daily nudge (user's local morning). Follow Push API best practices to avoid spam.
-
 ## 13) Telemetry & cost
 
 Log Groq usage and latency per request; compute per-reading cost and rolling monthly cost. Groq response objects include a usage section and model id for auditing.
