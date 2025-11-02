@@ -1,2 +1,0 @@
-[console_scripts]
-tarot-pipeline = daily_tarot_pipeline.cli:app

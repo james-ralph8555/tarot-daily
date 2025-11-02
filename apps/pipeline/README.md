@@ -32,7 +32,7 @@ docker compose -f apps/db/docker-compose.yml up -d postgres
 docker run --rm -it \
   --network db_default \
   -e POSTGRES_HOST=postgres \
-  -e GROQ_API_KEY=<removed> \
+  -e GROQ_API_KEY=<your-groq-api-key> \
   -v "$(pwd)/data:/app/data" \
   daily-tarot-pipeline nightly
 ```
@@ -74,7 +74,7 @@ Access the MLflow UI at http://localhost:5000 after starting the server to:
 ### Development with Docker
 ```bash
 # Start postgres and build/run pipeline in one command
-docker compose -f apps/db/docker-compose.yml up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm -it --network db_default -e POSTGRES_HOST=postgres -e GROQ_API_KEY=<removed> -v "$(pwd)/data:/app/data" daily-tarot-pipeline nightly
+docker compose -f apps/db/docker-compose.yml up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm -it --network db_default -e POSTGRES_HOST=postgres -e GROQ_API_KEY=<your-groq-api-key> -v "$(pwd)/data:/app/data" daily-tarot-pipeline nightly
 ```
 
 ## CLI Reference
