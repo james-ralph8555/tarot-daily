@@ -60,3 +60,11 @@ npm run format
 # Reset database
 docker-compose down -v && docker-compose up -d postgres
 ```
+
+## Roadmap
+
+[X] NextJS Site
+[X] DSPy MIPro Prompt Optimization from Feedback
+[ ] DSPy GEPA Prompt Optimization w/ MLFlow integration
+[ ] Cloudflare migration
+[ ] Chat Interface

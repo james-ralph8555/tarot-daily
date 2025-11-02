@@ -10,7 +10,8 @@
     "build": "npm run build --workspaces",
     "lint": "npm run lint --workspaces",
     "test": "npm run test --workspaces",
-    "format": "npm run format --workspaces"
+    "format": "npm run format --workspaces",
+    "start-mlflow": "mkdir -p ./data/mlartifacts && uv run --with mlflow mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///./data/mlflow.db --default-artifact-root ./data/mlartifacts --serve-artifacts"
   },
   "engines": {
     "node": ">=18.18.0"

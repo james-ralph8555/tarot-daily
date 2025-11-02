@@ -1,0 +1,12 @@
+dspy
+psycopg[binary]==3.2.3
+python-dotenv
+pydantic
+pydantic-settings
+pandas
+typer
+mlflow
+
+[dev]
+pytest
+pytest-asyncio

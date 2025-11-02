@@ -25,3 +25,4 @@ poetry.lock
 .env
 .env.*
 .next/
+apps/pipeline/data/

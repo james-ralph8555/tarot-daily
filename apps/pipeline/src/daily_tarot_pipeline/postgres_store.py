@@ -125,6 +125,7 @@ class PostgresStore:
                         data = EXCLUDED.data,
                         created_at = EXCLUDED.created_at
                 """, [name, json.dumps(data), datetime.now(timezone.utc)])
+                conn.commit()
 
     def fetch_feedback(self, limit: int = 1000) -> list[FeedbackRecord]:
         """Fetch recent feedback for dataset creation"""
@@ -153,14 +154,22 @@ class PostgresStore:
                         prompt = EXCLUDED.prompt,
                         active = EXCLUDED.active
                 """, [version_id, f"Optimizer: {optimizer}, Status: {status}, Metadata: {metadata_json}", False, datetime.now(timezone.utc)])
+                conn.commit()
                 return version_id
 
     def record_evaluation(self, evaluation: 'EvaluationRun') -> None:
         """Record evaluation run results"""
         with self.connection() as conn:
             with conn.cursor() as cur:
-                # Convert prompt_version_id string to integer
-                version_id = hash(evaluation.prompt_version_id) % 1000000
+                # Handle both string and integer prompt_version_id
+                if isinstance(evaluation.prompt_version_id, int):
+                    version_id = evaluation.prompt_version_id
+                else:
+                    # Try to convert string to int first, fall back to hash
+                    try:
+                        version_id = int(evaluation.prompt_version_id)
+                    except (ValueError, TypeError):
+                        version_id = hash(evaluation.prompt_version_id) % 1000000
                 metrics_json = json.dumps([metric.model_dump() for metric in evaluation.metrics])
                 
                 cur.execute("""
@@ -174,6 +183,7 @@ class PostgresStore:
                     metrics_json,
                     evaluation.created_at
                 ])
+                conn.commit()
 
     def get_training_dataset(self, name: str) -> Optional[list[dict]]:
         """Get training dataset by name"""

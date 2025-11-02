@@ -16,6 +16,8 @@ tarot-pipeline nightly
 
 ## Docker Guide
 
+**Important:** Always mount a volume to persist MLflow SQLite database and artifacts when running in Docker. Use `-v "$(pwd)/data:/app/data"` in all Docker commands.
+
 ### Build the Docker image
 ```bash
 docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline .
@@ -26,12 +28,89 @@ docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline .
 # Start postgres first
 docker compose -f apps/db/docker-compose.yml up -d postgres
 
-# Run nightly job
-docker run --rm --network db_default -e GROQ_API_KEY=your_key -e POSTGRES_HOST=postgres daily-tarot-pipeline nightly
+# Run nightly job (with volume mount for MLflow persistence)
+docker run --rm -it \
+  --network db_default \
+  -e POSTGRES_HOST=postgres \
+  -e GROQ_API_KEY=<removed> \
+  -v "$(pwd)/data:/app/data" \
+  daily-tarot-pipeline nightly
 ```
+
+### MLflow Integration
+The pipeline now includes comprehensive MLflow tracking for DSPy experiments:
+
+**Features:**
+- Automatic DSPy module logging and versioning
+- Optimizer compilation tracking with traces
+- Evaluation metrics and artifact storage
+- Model serving capabilities
+
+**Commands:**
+```bash
+# Start MLflow UI server
+tarot-pipeline serve --port 5000
+
+# List available DSPy models
+tarot-pipeline model list
+
+# Test prediction with a logged model
+tarot-pipeline model predict runs:/<run-id>/model
+
+# Serve a model as REST API
+tarot-pipeline model serve runs:/<run-id>/model --port 8080
+
+# Evaluate a specific model on a dataset
+tarot-pipeline eval dataset <dataset_name> --model-uri runs:/<run-id>/model
+```
+
+**MLflow UI:**
+Access the MLflow UI at http://localhost:5000 after starting the server to:
+- View experiment runs and metrics
+- Compare different model versions
+- Download trained DSPy modules
+- Trace optimization progress
 
 ### Development with Docker
 ```bash
 # Start postgres and build/run pipeline in one command
-docker compose -f apps/db/docker-compose.yml up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm --network db_default -e GROQ_API_KEY=your_key -e POSTGRES_HOST=postgres daily-tarot-pipeline nightly
+docker compose -f apps/db/docker-compose.yml up -d postgres && docker build -f apps/pipeline/Dockerfile -t daily-tarot-pipeline . && docker run --rm -it --network db_default -e POSTGRES_HOST=postgres -e GROQ_API_KEY=<removed> -v "$(pwd)/data:/app/data" daily-tarot-pipeline nightly
+```
+
+## CLI Reference
+
+### Dataset Operations
+```bash
+# Build training dataset from readings and feedback
+tarot-pipeline dataset build <dataset_name> --limit 2000
+
+# Evaluate metrics on existing dataset
+tarot-pipeline eval dataset <dataset_name> [--model-uri runs:/<run-id>/model]
+```
+
+### Optimization
+```bash
+# Run MIPROv2 optimizer on a dataset
+tarot-pipeline optimize mipro <dataset_name> [--out output_dir]
+```
+
+### Model Management
+```bash
+# List available DSPy models
+tarot-pipeline model list [--experiment experiment_name]
+
+# Test prediction with model
+tarot-pipeline model predict <model_uri> [--intent "your intent"] [--spread-type single] [--card-id 00-fool]
+
+# Serve model as REST API
+tarot-pipeline model serve <model_uri> [--port 8080]
+```
+
+### MLflow & Tracking
+```bash
+# Start MLflow UI server
+tarot-pipeline serve [--port 5000] [--host 0.0.0.0]
+
+# Full nightly workflow with tracking
+tarot-pipeline nightly [--limit 2000]
 ```
