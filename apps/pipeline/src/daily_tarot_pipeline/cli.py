@@ -39,15 +39,24 @@ def build_dataset(name: str = typer.Argument(..., help="Dataset label"), limit: 
 
 @optimizer_app.command("mipro")
 def optimize_mipro(
-    dataset: str = typer.Argument(..., help="Dataset name to use"),
+    dataset: Optional[str] = typer.Argument(None, help="Dataset name to use (if not provided, builds from feedback)"),
+    limit: int = typer.Option(2000, help="Max feedback examples to use when building dataset"),
     out: Optional[Path] = typer.Option(None, help="Output directory for optimized prompt"),
 ):
     """Run MIPROv2 optimizer using stored dataset with MLflow tracking."""
 
     store = PostgresStore(get_settings())
-    examples = _load_dataset_examples(store, dataset)
-    if not examples:
-        raise typer.BadParameter(f"Dataset '{dataset}' not found")
+    
+    # If no dataset provided, build from feedback
+    if dataset is None:
+        examples = build_training_examples(store, limit=limit, include_negative=True)
+        dataset = f"feedback-built-{len(examples)}-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}"
+        persist_dataset(store, dataset, examples)
+        typer.echo(f"Built dataset '{dataset}' with {len(examples)} examples from feedback")
+    else:
+        examples = _load_dataset_examples(store, dataset)
+        if not examples:
+            raise typer.BadParameter(f"Dataset '{dataset}' not found")
 
     # Initialize MLflow tracking
     tracker = get_mlflow_tracker("mipro-optimization")

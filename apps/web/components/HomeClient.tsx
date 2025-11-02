@@ -210,11 +210,10 @@ function Callouts(props: { isStreaming: boolean }) {
           </svg>
         </div>
         <p className="leading-relaxed">
-          Your signal trains the nocturnal DSPy optimizer. Prompt updates deploy only when evaluation metrics stay true
-          or ascend.
+          Your feedback helps improve the system. Quality metrics are tracked and analyzed to ensure the best experience.
         </p>
         <p className="text-[0.65rem] uppercase tracking-[0.35em] text-gilded-200/80">
-          {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS | Pipeline: DSPy <-> PostgreSQL"}
+          {props.isStreaming ? "Streaming in progress..." : "Model: Groq GPT-OSS | Metrics tracked via MLflow"}
         </p>
       </div>
     </div>

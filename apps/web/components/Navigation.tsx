@@ -37,10 +37,7 @@ export function Navigation(props: NavigationProps = {}) {
             History
           </Link>
           <span className="text-lapis-200/40">❦</span>
-          <Link href="/tuning" className="transition hover:text-gilded-300">
-            Tuning
-          </Link>
-          <span className="text-lapis-200/40">❦</span>
+
           <Link href="/settings" className="transition hover:text-gilded-300">
             Settings
           </Link>

@@ -61,7 +61,7 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     
     # Enhanced optimizer configuration with proper metrics
     optimizer = dspy.MIPROv2(
-        metric=lambda gold, pred: _metric_fn(gold, pred), 
+        metric=_metric_fn, 
         init_temperature=0.7,
         auto="light"  # Use light mode for faster optimization
     )
@@ -158,50 +158,21 @@ def run_mipro(training_examples: Iterable[TrainingExample], output_dir: Path) ->
     )
 
 
-def _metric_fn(gold, pred) -> float:
+def _metric_fn(example, prediction, trace=None) -> float:
     """Enhanced metric function for DSPy evaluation."""
     # Handle case where pred might be None or have missing fields
-    if pred is None:
+    if prediction is None:
         return 0.0
     
-    # Convert dspy.Example objects to dicts if needed
-    if hasattr(gold, 'toDict'):
-        gold = gold.toDict()
-    elif hasattr(gold, '__dict__'):
-        gold = gold.__dict__
-        
-    if hasattr(pred, 'toDict'):
-        pred = pred.toDict()
-    elif hasattr(pred, '__dict__'):
-        pred = pred.__dict__
+    # Extract gold values from example
+    gold_overview = example.overview
+    gold_synthesis = example.synthesis
+    gold_actionable = example.actionable_reflection
     
-    # Handle case where inputs are expected but we have a dict
-    if isinstance(gold, dict) and 'inputs' not in gold and 'input' in gold:
-        gold_inputs = gold['input'] if 'input' in gold else gold
-        pred_inputs = pred
-        
-        if isinstance(pred_inputs, dict) and 'inputs' not in pred_inputs and 'input' in pred_inputs:
-            pred_inputs = pred_inputs['input'] if 'input' in pred_inputs else pred_inputs
-            
-        # Extract fields for comparison
-        gold_overview = gold_inputs.get("overview") if isinstance(gold_inputs, dict) else None
-        pred_overview = pred_inputs.get("overview") if isinstance(pred_inputs, dict) else None
-        
-        gold_synthesis = gold_inputs.get("synthesis") if isinstance(gold_inputs, dict) else None
-        pred_synthesis = pred_inputs.get("synthesis") if isinstance(pred_inputs, dict) else None
-        
-        gold_actionable = gold_inputs.get("actionable_reflection") if isinstance(gold_inputs, dict) else None
-        pred_actionable = pred_inputs.get("actionable_reflection") if isinstance(pred_inputs, dict) else None
-    else:
-        # Direct extraction
-        gold_overview = gold.get("overview") if isinstance(gold, dict) else getattr(gold, "overview", None)
-        pred_overview = pred.get("overview") if isinstance(pred, dict) else getattr(pred, "overview", None)
-        
-        gold_synthesis = gold.get("synthesis") if isinstance(gold, dict) else getattr(gold, "synthesis", None)
-        pred_synthesis = pred.get("synthesis") if isinstance(pred, dict) else getattr(pred, "synthesis", None)
-        
-        gold_actionable = gold.get("actionable_reflection") if isinstance(gold, dict) else getattr(gold, "actionable_reflection", None)
-        pred_actionable = pred.get("actionable_reflection") if isinstance(pred, dict) else getattr(pred, "actionable_reflection", None)
+    # Extract predicted values
+    pred_overview = getattr(prediction, "overview", None)
+    pred_synthesis = getattr(prediction, "synthesis", None)
+    pred_actionable = getattr(prediction, "actionable_reflection", None)
     
     # Calculate multiple aspect scores
     scores = []
